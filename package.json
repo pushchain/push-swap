@@ -1,16 +1,14 @@
 {
     "name": "uniswap-v3-fork-push-chain",
     "version": "1.0.0",
-    "description": "Uniswap V3 fork for Push Chain deployment",
+    "description": "Production-ready Uniswap V3 fork with mathematically correct price mechanics for Push Chain",
     "scripts": {
-        "deploy-wpush": "npx hardhat run deploy-wpush.js --network pushchain",
-        "deploy-core": "cd v3-core && npm install && npx hardhat compile && npx hardhat run scripts/deploy-core.js --network pushchain",
-        "deploy-periphery": "cd v3-periphery && npm install && npx hardhat compile && npx hardhat run scripts/deploy-periphery.js --network pushchain",
-        "deploy-all": "npm run deploy-core && npm run deploy-periphery",
-        "deploy-pools": "npx hardhat run scripts/deploy-pools.js --network pushchain",
-        "add-liquidity": "node scripts/cli/add-liquidity.js",
-        "create-pool": "node scripts/cli/create-pool.js",
-        "swap": "node scripts/cli/swap.js",
+        "deploy-dex": "npx hardhat run scripts/deploy-all.js --network push",
+        "pool-manager": "node scripts/pool-manager.js",
+        "deploy-wpush": "npx hardhat run scripts/deploy-wpush.js --network push",
+        "deploy-core": "cd v3-core && npm install && npx hardhat compile && npx hardhat run scripts/deploy-core.js --network push",
+        "deploy-periphery": "cd v3-periphery && npm install && npx hardhat compile && npx hardhat run scripts/deploy-periphery.js --network push",
+        "deploy-contracts": "npm run deploy-core && npm run deploy-periphery",
         "clean": "cd v3-core && npx hardhat clean && cd ../v3-periphery && npx hardhat clean"
     },
     "keywords": [
@@ -19,7 +17,12 @@
         "fork",
         "push",
         "defi",
-        "amm"
+        "amm",
+        "sqrtpricex96",
+        "concentrated-liquidity",
+        "decimal-precision",
+        "price-mechanics",
+        "mathematical-correctness"
     ],
     "license": "GPL-3.0-or-later",
     "devDependencies": {
