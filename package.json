@@ -3,11 +3,11 @@
     "version": "1.0.0",
     "description": "Production-ready Uniswap V3 fork with mathematically correct price mechanics for Push Chain",
     "scripts": {
-        "deploy-dex": "npx hardhat run scripts/deploy-all.js --network push",
+        "deploy-dex": "npx hardhat run scripts/deploy-all.js --network pushchain",
         "pool-manager": "node scripts/pool-manager.js",
-        "deploy-wpush": "npx hardhat run scripts/deploy-wpush.js --network push",
-        "deploy-core": "cd v3-core && npm install && npx hardhat compile && npx hardhat run scripts/deploy-core.js --network push",
-        "deploy-periphery": "cd v3-periphery && npm install && npx hardhat compile && npx hardhat run scripts/deploy-periphery.js --network push",
+        "deploy-wpush": "npx hardhat run scripts/deploy-wpush.js --network pushchain",
+        "deploy-core": "cd v3-core && npm install && npx hardhat compile && npx hardhat run scripts/deploy-core.js --network pushchain",
+        "deploy-periphery": "cd v3-periphery && npm install && npx hardhat compile && npx hardhat run scripts/deploy-periphery.js --network pushchain",
         "deploy-contracts": "npm run deploy-core && npm run deploy-periphery",
         "clean": "cd v3-core && npx hardhat clean && cd ../v3-periphery && npx hardhat clean"
     },
