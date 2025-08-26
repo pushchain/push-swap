@@ -18,8 +18,8 @@ async function deployAll() {
         console.log('🟢 STEP 1: Deploy pETH and pUSDC tokens');
         console.log('-'.repeat(50));
         const tokens = await deployTokens(
-            "Push ETH", "pETH", 18, "1000000",
-            "Push USDC", "pUSDC", 6, "10000000"
+            "pETH", "Push ETH", 18, "1000000",
+            "pUSDC", "Push USDC", 6, "10000000"
         );
         const pETHAddress = tokens.pETH.address;
         const pUSDCAddress = tokens.pUSDC.address;
@@ -42,9 +42,9 @@ async function deployAll() {
         // Step 4: Create WPUSH/pUSDC pool
         console.log('🟢 STEP 4: Create WPUSH/pUSDC pool (1 WPUSH = 1000 pUSDC)');
         console.log('-'.repeat(50));
-        const wpushAddress = "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17"; // From config
+        const wpushAddress = "0x884B23638596A7DCbbC133Ba671e4F2A2dedf285"; // Fresh WPUSH deployment
         const wpushUsdcPool = await createPool(
-            wpushAddress, pUSDCAddress, 1000, 3000, true, "10", "10000"
+            wpushAddress, pUSDCAddress, 1000, 3000, true, "1", "1000"
         );
         console.log('✅ WPUSH/pUSDC pool created and liquidity added!\n');
 
@@ -60,14 +60,14 @@ async function deployAll() {
         console.log('🟢 STEP 6: Create pETH/WPUSH pool (1 pETH = 4 WPUSH)');
         console.log('-'.repeat(50));
         const pethWpushPool = await createPool(
-            pETHAddress, wpushAddress, 4, 3000, true, "10", "40"
+            pETHAddress, wpushAddress, 4, 3000, true, "1", "1"
         );
         console.log('✅ pETH/WPUSH pool created and liquidity added!\n');
 
         // Step 7: Test pETH/WPUSH swap
         console.log('🟢 STEP 7: Test pETH/WPUSH swap');
         console.log('-'.repeat(50));
-        await performSwap(pethWpushPool, wpushAddress, pETHAddress, "4");
+        await performSwap(pethWpushPool, wpushAddress, pETHAddress, "0.25");
         console.log('✅ pETH/WPUSH swap test successful!\n');
 
         // Final summary

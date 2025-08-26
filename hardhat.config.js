@@ -5,6 +5,7 @@ require('dotenv').config();
 // Default private key for local testing (DO NOT USE IN PRODUCTION)
 const DEFAULT_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
+/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
     solidity: {
         compilers: [
@@ -53,10 +54,10 @@ module.exports = {
             allowUnlimitedContractSize: true,
             chainId: 31337,
         },
-        pushchain: {
-            url: process.env.PUSH_RPC_URL || 'https://rpc.push.org',
+        push_testnet: {
+            url: process.env.PUSH_RPC_URL || 'https://evm.rpc-testnet-donut-node1.push.org/',
             accounts: process.env.PRIVATE_KEY && process.env.PRIVATE_KEY.length === 66 ? [process.env.PRIVATE_KEY] : [DEFAULT_PRIVATE_KEY],
-            chainId: parseInt(process.env.PUSH_CHAIN_ID || '1337'),
+            chainId: parseInt(process.env.PUSH_CHAIN_ID || '42101'),
             gasPrice: 'auto',
             gas: 'auto',
             timeout: 120000,
@@ -78,8 +79,12 @@ module.exports = {
             },
         ],
     },
+    sourcify: {
+        // Disable sourcify for manual verification
+        enabled: false,
+    },
     paths: {
-        sources: './tests/contracts',
+        sources: './contracts',
         artifacts: './artifacts',
         cache: './cache',
     },

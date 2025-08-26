@@ -2,51 +2,96 @@ const { ethers } = require('hardhat');
 const config = require('./core/config');
 const fs = require('fs');
 const path = require('path');
+const BN = require('bignumber.js');
 
-// Simple and correct sqrt price calculation
+// Precise sqrt price calculation using bignumber.js to match Uniswap's encodePriceSqrt
 function calculateSqrtPriceX96Precise(priceRatio, token0Decimals, token1Decimals) {
-    const Q96 = ethers.BigNumber.from(2).pow(96);
+    BN.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 });
 
-    // For tokens with same decimals, price ratio is direct
-    if (token0Decimals === token1Decimals) {
-        if (priceRatio === 1) return Q96;
-        if (priceRatio === 4) return Q96.mul(2); // sqrt(4) = 2
-        
-        // General case: sqrt(priceRatio) * 2^96
-        const sqrtValue = Math.sqrt(priceRatio);
-        const sqrtScaled = ethers.utils.parseUnits(sqrtValue.toFixed(18), 18);
-        return sqrtScaled.mul(Q96).div(ethers.utils.parseUnits("1", 18));
-    }
+    // priceRatio represents the ratio token1/token0 in human readable terms
+    // We need to convert this to the ratio in base units
+    // Base unit ratio = (human_ratio * 10^token1_decimals) / 10^token0_decimals
 
-    // For tokens with different decimals, adjust for decimal difference
-    const decimalDiff = token1Decimals - token0Decimals;
-    const adjustedRatio = priceRatio * Math.pow(10, decimalDiff);
-    
-    const sqrtValue = Math.sqrt(adjustedRatio);
-    const sqrtScaled = ethers.utils.parseUnits(sqrtValue.toFixed(18), 18);
-    return sqrtScaled.mul(Q96).div(ethers.utils.parseUnits("1", 18));
+    const ratio = new BN(priceRatio.toString());
+    const token0Factor = new BN(10).pow(token0Decimals);
+    const token1Factor = new BN(10).pow(token1Decimals);
+
+    // Calculate the ratio in base units: (price * 10^token1_decimals) / 10^token0_decimals
+    const baseUnitRatio = ratio.multipliedBy(token1Factor).dividedBy(token0Factor);
+
+    // sqrt(price) * 2^96, floored to integer (uint160)
+    const sqrtPriceTimesQ96 = baseUnitRatio
+        .sqrt()
+        .multipliedBy(new BN(2).pow(96))
+        .integerValue(BN.ROUND_FLOOR)
+        .toString();
+
+    return ethers.BigNumber.from(sqrtPriceTimesQ96);
 }
 
-// Deploy tokens
-async function deployTokens(token1Name, token1Symbol, token1Decimals, token1Supply, token2Name, token2Symbol, token2Decimals, token2Supply) {
-    console.log('🪙 DEPLOYING TOKENS');
+// Safe approval helper - checks allowance before approving
+async function safeApprove(tokenContract, spenderAddress, amount, signerAddress) {
+    try {
+        const currentAllowance = await tokenContract.allowance(signerAddress, spenderAddress);
+
+        if (currentAllowance.lt(amount)) {
+            console.log('├─ Approving token for', ethers.utils.formatUnits(amount, await tokenContract.decimals()));
+            // Approve max uint256 to avoid future re-approvals
+            const maxApproval = ethers.constants.MaxUint256;
+            const approveTx = await tokenContract.approve(spenderAddress, maxApproval);
+            await approveTx.wait();
+            console.log('├─ ✅ Token approved (MaxUint256)');
+        } else {
+            console.log('├─ ✅ Token already approved (sufficient allowance)');
+        }
+    } catch (error) {
+        console.log('├─ ❌ Approval failed:', error.message);
+        throw error;
+    }
+}
+
+// Deploy PRC20 tokens
+async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supply, token2Symbol, token2Name, token2Decimals, token2Supply) {
+    console.log('🪙 DEPLOYING PRC20 TOKENS');
     console.log('='.repeat(50));
 
     try {
         const signer = config.getSigner();
-        const TestTokenFactory = await ethers.getContractFactory('TestERC20');
+        const TestPRC20Factory = await ethers.getContractFactory('TestPRC20');
 
-        // Deploy Token 1
-        console.log(`├─ Deploying ${token1Symbol}...`);
-        const token1 = await TestTokenFactory.connect(signer).deploy(
-            token1Name, token1Symbol, token1Decimals, ethers.utils.parseUnits(token1Supply, token1Decimals)
+        // Use deployer address as handler and universal executor for testing
+        const handlerAddress = signer.address;
+        const universalExecutor = signer.address;
+
+        // Deploy Token 1 (PRC20)
+        console.log(`├─ Deploying ${token1Symbol} (PRC20)...`);
+        const token1 = await TestPRC20Factory.connect(signer).deploy(
+            token1Name,                                    // name
+            token1Symbol,                                  // symbol  
+            token1Decimals,                               // decimals
+            1,                                            // sourceChainId (mock)
+            2,                                            // TokenType.PC
+            21000,                                        // gasLimit (mock)
+            0,                                            // protocolFlatFee
+            universalExecutor,                            // universalExecutor
+            handlerAddress,                               // handler
+            ethers.utils.parseUnits(token1Supply, token1Decimals) // initialSupply
         );
         await token1.deployed();
 
-        // Deploy Token 2
-        console.log(`├─ Deploying ${token2Symbol}...`);
-        const token2 = await TestTokenFactory.connect(signer).deploy(
-            token2Name, token2Symbol, token2Decimals, ethers.utils.parseUnits(token2Supply, token2Decimals)
+        // Deploy Token 2 (PRC20)
+        console.log(`├─ Deploying ${token2Symbol} (PRC20)...`);
+        const token2 = await TestPRC20Factory.connect(signer).deploy(
+            token2Name,                                    // name
+            token2Symbol,                                  // symbol
+            token2Decimals,                               // decimals
+            1,                                            // sourceChainId (mock)
+            2,                                            // TokenType.ERC20
+            21000,                                        // gasLimit (mock)
+            0,                                            // protocolFlatFee
+            universalExecutor,                            // universalExecutor
+            handlerAddress,                               // handler
+            ethers.utils.parseUnits(token2Supply, token2Decimals) // initialSupply
         );
         await token2.deployed();
 
@@ -71,27 +116,24 @@ async function deployTokens(token1Name, token1Symbol, token1Decimals, token1Supp
         console.log(`├─ ${token2Symbol} deployed:`, token2.address);
         console.log('└─ ✅ Tokens deployed successfully!');
 
-        // Save addresses
+        // Save addresses with proper structure
         const addressesPath = path.join(__dirname, '..', 'test-addresses.json');
         let addressesData = {};
         try {
             addressesData = JSON.parse(fs.readFileSync(addressesPath, 'utf8'));
         } catch (e) {
             addressesData = {
+                version: "1.0.0",
+                lastUpdated: new Date().toISOString().split('T')[0],
+                productionPools: {},
                 network: {
                     name: "Push Chain",
                     chainId: 42101,
-                    rpcUrl: "https://rpc.push.org"
+                    rpcUrl: "https://evm.rpc-testnet-donut-node1.push.org"
                 },
-                contracts: {
-                    factory: '0x4cBD1E2E6f44C0e406F5FfC9bb5312a281610E94',
-                    wpush: '0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17',
-                    swapRouter: '0xf90F08fD301190Cd34CC9eFc5A76351e95051670',
-                    positionManager: '0x4e8152fB4C72De9f187Cc93E85135283517B2fbB',
-                    quoterV2: '0x83D3B8bAe05C36b5404c1e284D306a6a1351Ef60',
-                    tickLens: '0x0b19E6e4dA71Be4F12db104373340d8fFc49880A',
-                    multicall: '0x10cB82cb3Fa3cf01855cF90AbF61855Cfe92d937'
-                }
+                contracts: config.CONTRACTS,
+                testTokens: {},
+                pools: {}
             };
         }
 
@@ -126,6 +168,14 @@ async function deployTokens(token1Name, token1Symbol, token1Decimals, token1Supp
 async function createPool(token0Address, token1Address, priceRatio, fee = 3000, addLiquidity = false, amount0 = "1000", amount1 = "1000") {
     console.log('🏊 CREATING POOL');
     console.log('='.repeat(50));
+
+    // Validate price ratio is reasonable (human-readable)
+    if (priceRatio <= 0) {
+        throw new Error('Price ratio must be positive');
+    }
+    if (priceRatio > 1e12 || priceRatio < 1e-12) {
+        console.log('⚠️  Warning: Price ratio seems extreme. Ensure you\'re using human-readable ratios (e.g., 1 ETH = 3000 USDC → ratio=3000)');
+    }
     console.log(`💰 Price Ratio: ${priceRatio} (token1/token0)`);
 
     try {
@@ -162,20 +212,49 @@ async function createPool(token0Address, token1Address, priceRatio, fee = 3000, 
         // Initialize pool
         const pool = new ethers.Contract(poolAddress, config.ABIS.pool, signer);
 
-        // Determine price ratio based on token order
-        // priceRatio parameter represents: 1 inputToken0 = priceRatio inputToken1
-        // We need to convert this to token1/token0 in the sorted pool order
-        const isInputToken0SortedFirst = token0.toLowerCase() === token0Address.toLowerCase();
-        const actualPriceRatio = isInputToken0SortedFirst ? priceRatio : (1 / priceRatio);
+        // Get token symbols for better debugging
+        const inputToken0Contract = new ethers.Contract(token0Address, config.ABIS.prc20, signer);
+        const inputToken1Contract = new ethers.Contract(token1Address, config.ABIS.prc20, signer);
+        const inputSymbol0 = await inputToken0Contract.symbol();
+        const inputSymbol1 = await inputToken1Contract.symbol();
 
-        console.log('├─ Input price meaning: 1', await (new ethers.Contract(token0Address, config.ABIS.erc20, signer)).symbol(), '=', priceRatio, await (new ethers.Contract(token1Address, config.ABIS.erc20, signer)).symbol());
-        console.log('├─ Pool token0 (sorted):', await (new ethers.Contract(token0, config.ABIS.erc20, signer)).symbol());
-        console.log('├─ Pool token1 (sorted):', await (new ethers.Contract(token1, config.ABIS.erc20, signer)).symbol());
+        const sortedToken0Contract = new ethers.Contract(token0, config.ABIS.prc20, signer);
+        const sortedToken1Contract = new ethers.Contract(token1, config.ABIS.prc20, signer);
+        const sortedSymbol0 = await sortedToken0Contract.symbol();
+        const sortedSymbol1 = await sortedToken1Contract.symbol();
+
+        // Determine price ratio for pool initialization
+        // Pool always needs: token1/token0 ratio
+        // Input format: "1 inputToken0 = priceRatio inputToken1"
+
+        console.log('🧮 PRICE CALCULATION:');
+        console.log('├─ Input format: 1', inputSymbol0, '=', priceRatio, inputSymbol1);
+        console.log('├─ Pool token0:', sortedSymbol0);
+        console.log('├─ Pool token1:', sortedSymbol1);
+
+        let actualPriceRatio;
+
+        // Case 1: inputToken0=pETH, inputToken1=pUSDC, input="1 pETH = 4000 pUSDC"
+        // Pool: token0=pUSDC, token1=pETH
+        // Need: token1/token0 = pETH/pUSDC = 1/4000 = 0.00025
+        if (inputSymbol0 === sortedSymbol1 && inputSymbol1 === sortedSymbol0) {
+            actualPriceRatio = 1 / priceRatio;
+            console.log('├─ Case: Input swapped vs pool order');
+            console.log('├─ Calculation: token1/token0 =', sortedSymbol1 + '/' + sortedSymbol0, '= 1/' + priceRatio, '=', actualPriceRatio);
+        } else {
+            actualPriceRatio = priceRatio;
+            console.log('├─ Case: Input matches pool order');
+            console.log('├─ Calculation: token1/token0 =', sortedSymbol1 + '/' + sortedSymbol0, '=', priceRatio);
+        }
+
+        console.log('├─ Input price meaning: 1', inputSymbol0, '=', priceRatio, inputSymbol1);
+        console.log('├─ Pool token0 (sorted):', sortedSymbol0);
+        console.log('├─ Pool token1 (sorted):', sortedSymbol1);
         console.log('├─ Actual price ratio for pool (token1/token0):', actualPriceRatio);
 
         // Get token decimals for proper price calculation
-        const token0Contract = new ethers.Contract(token0, config.ABIS.erc20, signer);
-        const token1Contract = new ethers.Contract(token1, config.ABIS.erc20, signer);
+        const token0Contract = new ethers.Contract(token0, config.ABIS.prc20, signer);
+        const token1Contract = new ethers.Contract(token1, config.ABIS.prc20, signer);
         const token0Decimals = await token0Contract.decimals();
         const token1Decimals = await token1Contract.decimals();
 
@@ -193,20 +272,52 @@ async function createPool(token0Address, token1Address, priceRatio, fee = 3000, 
         console.log('├─ SqrtPriceX96:', slot0.sqrtPriceX96.toString());
         console.log('├─ Current Tick:', slot0.tick.toString());
 
-        // Save pool info
+        // Save pool info with readable keys and token symbols
         const addressesPath = path.join(__dirname, '..', 'test-addresses.json');
-        let addressesData = JSON.parse(fs.readFileSync(addressesPath, 'utf8'));
+        let addressesData = {};
 
-        addressesData.pools = addressesData.pools || {};
-        const poolKey = `${token0}_${token1}_${fee}`;
+        try {
+            addressesData = JSON.parse(fs.readFileSync(addressesPath, 'utf8'));
+        } catch (error) {
+            // Initialize new file structure
+            addressesData = {
+                version: "1.0.0",
+                lastUpdated: new Date().toISOString().split('T')[0],
+                productionPools: {},
+                network: {
+                    name: "Push Chain",
+                    chainId: 42101,
+                    rpcUrl: "https://evm.rpc-testnet-donut-node1.push.org"
+                },
+                contracts: config.CONTRACTS,
+                testTokens: {},
+                pools: {}
+            };
+        }
+
+        // Get token symbols for readable pool key
+        const token0ContractForSymbol = new ethers.Contract(token0, config.ABIS.prc20, signer);
+        const token1ContractForSymbol = new ethers.Contract(token1, config.ABIS.prc20, signer);
+        const token0Symbol = await token0ContractForSymbol.symbol();
+        const token1Symbol = await token1ContractForSymbol.symbol();
+
+        // Create readable pool key
+        const poolKey = `${token0Symbol}_${token1Symbol}_${fee}`;
+
         addressesData.pools[poolKey] = {
+            name: `${token0Symbol}/${token1Symbol} Pool`,
             address: poolAddress,
             token0: token0,
             token1: token1,
+            token0Symbol: token0Symbol,
+            token1Symbol: token1Symbol,
             fee: fee,
+            feePercentage: `${(fee / 10000).toFixed(2)}%`,
             priceRatio: actualPriceRatio,
             sqrtPriceX96: sqrtPriceX96.toString(),
-            currentTick: slot0.tick.toString()
+            currentTick: slot0.tick.toString(),
+            targetPricing: `1 ${token0Symbol} = ${1 / actualPriceRatio} ${token1Symbol}`,
+            createdAt: new Date().toISOString()
         };
 
         fs.writeFileSync(addressesPath, JSON.stringify(addressesData, null, 2));
@@ -238,8 +349,8 @@ async function addLiquidityToPool(poolAddress, inputToken0Address, inputToken1Ad
         const positionManager = config.getContract('positionManager');
 
         // Get input token contracts
-        const inputToken0 = new ethers.Contract(inputToken0Address, config.ABIS.erc20, signer);
-        const inputToken1 = new ethers.Contract(inputToken1Address, config.ABIS.erc20, signer);
+        const inputToken0 = new ethers.Contract(inputToken0Address, config.ABIS.prc20, signer);
+        const inputToken1 = new ethers.Contract(inputToken1Address, config.ABIS.prc20, signer);
 
         // Get input token info
         const inputDecimals0 = await inputToken0.decimals();
@@ -268,8 +379,8 @@ async function addLiquidityToPool(poolAddress, inputToken0Address, inputToken1Ad
         const [sortedToken0, sortedToken1] = config.sortTokens(inputToken0Address, inputToken1Address);
 
         // Create contracts for sorted tokens
-        const sortedTokenContract0 = new ethers.Contract(sortedToken0, config.ABIS.erc20, signer);
-        const sortedTokenContract1 = new ethers.Contract(sortedToken1, config.ABIS.erc20, signer);
+        const sortedTokenContract0 = new ethers.Contract(sortedToken0, config.ABIS.prc20, signer);
+        const sortedTokenContract1 = new ethers.Contract(sortedToken1, config.ABIS.prc20, signer);
         const sortedSymbol0 = await sortedTokenContract0.symbol();
         const sortedSymbol1 = await sortedTokenContract1.symbol();
         const sortedDecimals0 = await sortedTokenContract0.decimals();
@@ -295,10 +406,10 @@ async function addLiquidityToPool(poolAddress, inputToken0Address, inputToken1Ad
             console.log('├─ Pool Amount1:', inputAmount0, sortedSymbol1);
         }
 
-        // Approve tokens (approve the actual tokens we're using)
-        console.log('├─ Approving tokens...');
-        await sortedTokenContract0.approve(positionManager.address, poolAmount0Desired);
-        await sortedTokenContract1.approve(positionManager.address, poolAmount1Desired);
+        // Safe approve tokens (approve the actual tokens we're using)
+        console.log('├─ Safe approving tokens...');
+        await safeApprove(sortedTokenContract0, positionManager.address, poolAmount0Desired, signer.address);
+        await safeApprove(sortedTokenContract1, positionManager.address, poolAmount1Desired, signer.address);
 
         // Get pool info for fee and current state
         const pool = new ethers.Contract(poolAddress, config.ABIS.pool, signer);
@@ -306,9 +417,13 @@ async function addLiquidityToPool(poolAddress, inputToken0Address, inputToken1Ad
         const slot0 = await pool.slot0();
         const currentTick = slot0.tick.toNumber ? slot0.tick.toNumber() : slot0.tick;
 
-        // Use a range of ±10% around current price (about ±1000 ticks)
+        // Dynamic tick range based on fee tier for better liquidity coverage
         const tickSpacing = fee === 500 ? 10 : fee === 3000 ? 60 : 200;
-        const tickRange = 120; // TIGHT range for balanced liquidity usage
+
+        // Wider range for higher fee tiers, scales with tick spacing
+        const baseTickRange = fee === 500 ? 2000 : fee === 3000 ? 5000 : 10000;
+        const tickRange = Math.max(baseTickRange, tickSpacing * 50); // Ensure minimum coverage
+
         const tickLower = Math.floor((currentTick - tickRange) / tickSpacing) * tickSpacing;
         const tickUpper = Math.ceil((currentTick + tickRange) / tickSpacing) * tickSpacing;
 
@@ -331,8 +446,14 @@ async function addLiquidityToPool(poolAddress, inputToken0Address, inputToken1Ad
         };
 
         console.log('├─ Minting position...');
-        const mintTx = await positionManager.mint(mintParams);
-        const receipt = await mintTx.wait();
+        let mintTx, receipt;
+        try {
+            mintTx = await positionManager.mint(mintParams);
+            receipt = await mintTx.wait();
+        } catch (mintError) {
+            console.log('├─ ❌ Mint failed:', mintError.reason || mintError.message);
+            throw new Error(`Position minting failed: ${mintError.reason || mintError.message}`);
+        }
         const transferEvent = receipt.events?.find(e => e.event === 'Transfer');
         const tokenId = transferEvent?.args?.tokenId;
 
@@ -364,8 +485,8 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
         const swapRouter = config.getContract('swapRouter');
 
         // Get token contracts
-        const tokenIn = new ethers.Contract(tokenInAddress, config.ABIS.erc20, signer);
-        const tokenOut = new ethers.Contract(tokenOutAddress, config.ABIS.erc20, signer);
+        const tokenIn = new ethers.Contract(tokenInAddress, config.ABIS.prc20, signer);
+        const tokenOut = new ethers.Contract(tokenOutAddress, config.ABIS.prc20, signer);
 
         // Get decimals
         const decimalsIn = await tokenIn.decimals();
@@ -389,13 +510,17 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
         console.log('├─ Balance In Before:', ethers.utils.formatUnits(balanceInBefore, decimalsIn), symbolIn);
         console.log('├─ Balance Out Before:', ethers.utils.formatUnits(balanceOutBefore, decimalsOut), symbolOut);
 
-        // Approve token
-        console.log('├─ Approving token...');
-        await tokenIn.approve(swapRouter.address, amountInParsed);
+        // Safe approve token
+        console.log('├─ Safe approving token...');
+        await safeApprove(tokenIn, swapRouter.address, amountInParsed, signer.address);
 
         // Get pool fee
         const pool = new ethers.Contract(poolAddress, config.ABIS.pool, signer);
         const fee = await pool.fee();
+
+        // Calculate expected minimum output (allow 50% slippage for testing)
+        const expectedOut = amountInParsed.div(4000); // Rough estimate based on price
+        const minOut = expectedOut.div(2); // 50% slippage tolerance
 
         // Swap params
         const swapParams = {
@@ -405,13 +530,37 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
             recipient: signer.address,
             deadline: Math.floor(Date.now() / 1000) + 60 * 20,
             amountIn: amountInParsed,
-            amountOutMinimum: 0,
+            amountOutMinimum: 0, // Allow any output for debugging
             sqrtPriceLimitX96: 0
         };
 
+        console.log('├─ Swap params:', JSON.stringify({
+            ...swapParams,
+            amountIn: swapParams.amountIn.toString(),
+            deadline: new Date(swapParams.deadline * 1000).toISOString()
+        }, null, 2));
+
         console.log('├─ Executing swap...');
-        const swapTx = await swapRouter.exactInputSingle(swapParams);
-        const receipt = await swapTx.wait();
+        let receipt;
+        try {
+            const swapTx = await swapRouter.exactInputSingle(swapParams);
+            console.log('├─ Transaction sent:', swapTx.hash);
+            receipt = await swapTx.wait();
+            console.log('├─ Transaction confirmed, gas used:', receipt.gasUsed.toString());
+
+            // Check for swap events
+            if (receipt.logs && receipt.logs.length > 0) {
+                console.log('├─ Transaction had', receipt.logs.length, 'events');
+                receipt.logs.forEach((log, i) => {
+                    console.log(`├─ Event ${i}: ${log.topics[0]}`);
+                });
+            } else {
+                console.log('├─ ⚠️  Transaction had NO EVENTS - this might be the issue!');
+            }
+        } catch (swapError) {
+            console.log('├─ ❌ Swap transaction failed:', swapError.message);
+            throw swapError;
+        }
 
         // Check new balances
         const balanceInAfter = await tokenIn.balanceOf(signer.address);
@@ -422,7 +571,9 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
 
         console.log('📊 Swap Results:');
         console.log('├─ Amount In:', ethers.utils.formatUnits(amountInActual, decimalsIn), symbolIn);
-        console.log('├─ Amount Out:', ethers.utils.formatUnits(amountOutActual, decimalsOut), symbolOut);
+        console.log('├─ Amount Out (formatted):', ethers.utils.formatUnits(amountOutActual, decimalsOut), symbolOut);
+        console.log('├─ Amount Out (raw wei):', amountOutActual.toString());
+        console.log('├─ Amount Out (18 decimals):', parseFloat(ethers.utils.formatUnits(amountOutActual, decimalsOut)).toFixed(18));
 
         // Calculate exchange rate properly
         if (amountInActual.gt(0)) {
@@ -430,6 +581,13 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
             console.log('├─ Exchange Rate:', `1 ${symbolIn} = ${ethers.utils.formatUnits(rate, decimalsOut)} ${symbolOut}`);
         } else {
             console.log('├─ Exchange Rate: N/A (no input amount)');
+        }
+
+        // Status check
+        if (amountOutActual.gt(0)) {
+            console.log('├─ ✅ SWAP SUCCESS: Received', amountOutActual.toString(), 'wei of', symbolOut);
+        } else {
+            console.log('├─ ❌ NO OUTPUT: Zero tokens received');
         }
         console.log('└─ Transaction Hash:', receipt.transactionHash);
 
@@ -447,6 +605,89 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
     }
 }
 
+// Add full-range liquidity (covers all possible prices)
+async function addFullRangeLiquidity(poolAddress, token0Address, token1Address, amount0, amount1) {
+    console.log('💰 ADDING FULL-RANGE LIQUIDITY');
+    console.log('='.repeat(50));
+
+    try {
+        const signer = config.getSigner();
+        const positionManager = new ethers.Contract(config.CONTRACTS.positionManager, config.ABIS.positionManager, signer);
+
+        // Get pool info
+        const pool = new ethers.Contract(poolAddress, config.ABIS.pool, signer);
+        const token0 = await pool.token0();
+        const token1 = await pool.token1();
+        const fee = await pool.fee();
+
+        console.log('├─ Pool Address:', poolAddress);
+        console.log('├─ Token0 (sorted):', token0);
+        console.log('├─ Token1 (sorted):', token1);
+
+        // Get token contracts and info
+        const token0Contract = new ethers.Contract(token0, config.ABIS.prc20, signer);
+        const token1Contract = new ethers.Contract(token1, config.ABIS.prc20, signer);
+        const decimals0 = await token0Contract.decimals();
+        const decimals1 = await token1Contract.decimals();
+        const symbol0 = await token0Contract.symbol();
+        const symbol1 = await token1Contract.symbol();
+
+        // Parse amounts
+        const amount0Parsed = ethers.utils.parseUnits(amount0, decimals0);
+        const amount1Parsed = ethers.utils.parseUnits(amount1, decimals1);
+
+        console.log('├─ Amount0:', amount0, symbol0);
+        console.log('├─ Amount1:', amount1, symbol1);
+
+        // Use FULL RANGE ticks (covers all possible prices)
+        const MIN_TICK = -887272;
+        const MAX_TICK = 887272;
+
+        // Align to tick spacing
+        const tickSpacing = fee === 500 ? 10 : fee === 3000 ? 60 : 200;
+        const tickLower = Math.ceil(MIN_TICK / tickSpacing) * tickSpacing;
+        const tickUpper = Math.floor(MAX_TICK / tickSpacing) * tickSpacing;
+
+        console.log('├─ Tick Range: FULL RANGE [', tickLower, ',', tickUpper, ']');
+        console.log('├─ This covers ALL possible prices!');
+
+        // Safe approve tokens
+        console.log('├─ Safe approving tokens...');
+        await safeApprove(token0Contract, positionManager.address, amount0Parsed, signer.address);
+        await safeApprove(token1Contract, positionManager.address, amount1Parsed, signer.address);
+
+        // Mint position
+        const mintParams = {
+            token0: token0,
+            token1: token1,
+            fee: fee,
+            tickLower: tickLower,
+            tickUpper: tickUpper,
+            amount0Desired: amount0Parsed,
+            amount1Desired: amount1Parsed,
+            amount0Min: 0,
+            amount1Min: 0,
+            recipient: signer.address,
+            deadline: Math.floor(Date.now() / 1000) + 60 * 20
+        };
+
+        console.log('├─ Minting full-range position...');
+        const mintTx = await positionManager.mint(mintParams);
+        const receipt = await mintTx.wait();
+
+        // Get token ID from events
+        const mintEvent = receipt.events?.find(e => e.event === 'IncreaseLiquidity' || e.event === 'Transfer');
+        const tokenId = mintEvent ? (mintEvent.args?.tokenId || mintEvent.args?.[2]) : 'Unknown';
+
+        console.log('└─ ✅ Full-range position NFT #' + tokenId + ' minted successfully!');
+        console.log('🎯 Now swaps should work with unlimited liquidity!');
+
+    } catch (error) {
+        console.log('❌ Full-range liquidity addition failed:', error.message);
+        throw error;
+    }
+}
+
 // Main function to handle command line arguments
 async function main() {
     const args = process.argv.slice(2);
@@ -457,7 +698,7 @@ async function main() {
             case 'deploy-tokens':
                 // node pool-manager.js deploy-tokens pETH "Push ETH" 18 1000000 pUSDC "Push USDC" 6 10000000
                 const [token1Symbol, token1Name, token1Decimals, token1Supply, token2Symbol, token2Name, token2Decimals, token2Supply] = args.slice(1);
-                await deployTokens(token1Name, token1Symbol, parseInt(token1Decimals), token1Supply, token2Name, token2Symbol, parseInt(token2Decimals), token2Supply);
+                await deployTokens(token1Symbol, token1Name, parseInt(token1Decimals), token1Supply, token2Symbol, token2Name, parseInt(token2Decimals), token2Supply);
                 break;
 
             case 'create-pool':
@@ -476,6 +717,12 @@ async function main() {
                 // node pool-manager.js swap <poolAddress> <tokenInAddress> <tokenOutAddress> <amountIn>
                 const [poolAddress, tokenInAddr, tokenOutAddr, amountIn] = args.slice(1);
                 await performSwap(poolAddress, tokenInAddr, tokenOutAddr, amountIn);
+                break;
+
+            case 'add-liquidity-full-range':
+                // node pool-manager.js add-liquidity-full-range <poolAddress> <token0Address> <token1Address> <amount0> <amount1>
+                const [poolAddr2, tok0Addr2, tok1Addr2, amount0_2, amount1_2] = args.slice(1);
+                await addFullRangeLiquidity(poolAddr2, tok0Addr2, tok1Addr2, amount0_2, amount1_2);
                 break;
 
             default:

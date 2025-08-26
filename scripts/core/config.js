@@ -2,13 +2,13 @@ const { ethers } = require('ethers');
 
 // Contract addresses from deployment (using existing WPUSH)
 const CONTRACTS = {
-    factory: '0x4cBD1E2E6f44C0e406F5FfC9bb5312a281610E94',
-    wpush: '0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17', // Existing WPUSH deployment
-    swapRouter: '0xf90F08fD301190Cd34CC9eFc5A76351e95051670',
-    positionManager: '0x4e8152fB4C72De9f187Cc93E85135283517B2fbB',
-    quoterV2: '0x83D3B8bAe05C36b5404c1e284D306a6a1351Ef60',
-    tickLens: '0x0b19E6e4dA71Be4F12db104373340d8fFc49880A',
-    multicall: '0x10cB82cb3Fa3cf01855cF90AbF61855Cfe92d937'
+    factory: '0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5',
+    wpush: '0x884B23638596A7DCbbC133Ba671e4F2A2dedf285', // Fresh WPUSH deployment
+    swapRouter: '0x34B10a283c2331Afa2C7a6bb5FB961E01f218fa0',
+    positionManager: '0xf90F08fD301190Cd34CC9eFc5A76351e95051670',
+    quoterV2: '0x4e8152fB4C72De9f187Cc93E85135283517B2fbB',
+    tickLens: '0x83D3B8bAe05C36b5404c1e284D306a6a1351Ef60',
+    multicall: '0x0b19E6e4dA71Be4F12db104373340d8fFc49880A'
 };
 
 // Contract ABIs
@@ -51,6 +51,34 @@ const ABIS = {
         'function decreaseAllowance(address spender, uint256 subtractedValue) returns (bool)',
         'event Transfer(address indexed from, address indexed to, uint256 value)',
         'event Approval(address indexed owner, address indexed spender, uint256 value)'
+    ],
+
+    // PRC20 ABI (includes ERC20 + PRC20 specific functions)
+    prc20: [
+        'function name() view returns (string)',
+        'function symbol() view returns (string)',
+        'function decimals() view returns (uint8)',
+        'function totalSupply() view returns (uint256)',
+        'function balanceOf(address account) view returns (uint256)',
+        'function transfer(address recipient, uint256 amount) returns (bool)',
+        'function approve(address spender, uint256 amount) returns (bool)',
+        'function transferFrom(address sender, address recipient, uint256 amount) returns (bool)',
+        'function allowance(address owner, address spender) view returns (uint256)',
+        'function burn(uint256 amount) returns (bool)',
+        'function mint(address to, uint256 amount) returns (bool)',
+        'function deposit(address to, uint256 amount) returns (bool)',
+        'function withdraw(bytes to, uint256 amount) returns (bool)',
+        'function withdrawGasFee() view returns (address, uint256)',
+        'function UNIVERSAL_EXECUTOR_MODULE() view returns (address)',
+        'function SOURCE_CHAIN_ID() view returns (uint256)',
+        'function TOKEN_TYPE() view returns (uint8)',
+        'function HANDLER_CONTRACT() view returns (address)',
+        'function GAS_LIMIT() view returns (uint256)',
+        'function PC_PROTOCOL_FEE() view returns (uint256)',
+        'event Transfer(address indexed from, address indexed to, uint256 value)',
+        'event Approval(address indexed owner, address indexed spender, uint256 value)',
+        'event Deposit(bytes from, address to, uint256 amount)',
+        'event Withdrawal(address from, bytes to, uint256 amount, uint256 gasFee, uint256 protocolFlatFee)'
     ],
 
     swapRouter: [
