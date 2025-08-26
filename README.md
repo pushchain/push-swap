@@ -20,7 +20,7 @@ push-swap/
 
 ## Quick Start
 
-### Deploy Complete DEX
+### Deploy Complete pools with liquidity 
 ```bash
 npm run deploy-dex
 ```
@@ -96,12 +96,6 @@ const adjustedRatio = priceRatio * Math.pow(10, decimalDiff);
 ```
 
 ## Configuration
-
-Network settings in `scripts/core/config.js`:
-- RPC URL: Push Chain testnet
-- Private Key: Environment variable  
-- Gas Settings: Push Chain optimized
-- Contract ABIs: Uniswap V3 interfaces
 
 ## Address Management
 
