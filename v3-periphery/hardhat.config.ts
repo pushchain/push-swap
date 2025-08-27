@@ -55,9 +55,9 @@ export default {
       allowUnlimitedContractSize: false,
     },
     pushchain: {
-      url: process.env.PUSH_RPC_URL || 'https://rpc.push.org',
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: parseInt(process.env.PUSH_CHAIN_ID || '1337'),
+      url: 'https://evm.rpc-testnet-donut-node1.push.org/',
+      accounts: [process.env.PRIVATE_KEY],
+      chainId: parseInt('42101'),
       gasPrice: 'auto',
       gas: 'auto',
       timeout: 120000,

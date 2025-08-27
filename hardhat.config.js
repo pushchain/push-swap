@@ -67,9 +67,9 @@ module.exports = {
             chainId: 31337,
         },
         push_testnet: {
-            url: process.env.PUSH_RPC_URL || 'https://evm.rpc-testnet-donut-node1.push.org/',
-            accounts: process.env.PRIVATE_KEY && process.env.PRIVATE_KEY.length === 66 ? [process.env.PRIVATE_KEY] : [DEFAULT_PRIVATE_KEY],
-            chainId: parseInt(process.env.PUSH_CHAIN_ID || '42101'),
+            url: 'https://evm.rpc-testnet-donut-node1.push.org/',
+            accounts: [DEFAULT_PRIVATE_KEY],
+            chainId: parseInt('42101'),
             gasPrice: 'auto',
             gas: 'auto',
             timeout: 120000,

@@ -17,27 +17,6 @@
     "multicall": "0x0b19E6e4dA71Be4F12db104373340d8fFc49880A"
   },
   "testTokens": {
-    "CLEAN": {
-      "name": "Clean Token 1",
-      "symbol": "CLEAN",
-      "address": "0xC2a3B712374e5CC59100D9163969F77feBE9423b",
-      "decimals": 18,
-      "totalSupply": "1000000"
-    },
-    "CLEAN2": {
-      "name": "Clean Token 2",
-      "symbol": "CLEAN2",
-      "address": "0x4264c1AD0292d8625d02f256402ff1D6B0DC4Bd2",
-      "decimals": 6,
-      "totalSupply": "5000000"
-    },
-    "PC": {
-      "name": "Push Chain Native",
-      "symbol": "PC",
-      "address": "0x09dd23C08a2E857Cb0f2d5E79ce3a2680925D940",
-      "decimals": 18,
-      "totalSupply": "1000000"
-    },
     "pUSDC": {
       "name": "Push USDC",
       "symbol": "pUSDC",
@@ -46,22 +25,6 @@
       "totalSupply": "10000000"
     }
   },
-  "pools": {
-    "CLEAN2_CLEAN_3000": {
-      "name": "CLEAN2/CLEAN Pool",
-      "address": "0x06b4a1789475336De536f68370E690BE28f89c0C",
-      "token0": "0x4264c1AD0292d8625d02f256402ff1D6B0DC4Bd2",
-      "token1": "0xC2a3B712374e5CC59100D9163969F77feBE9423b",
-      "token0Symbol": "CLEAN2",
-      "token1Symbol": "CLEAN",
-      "fee": 3000,
-      "feePercentage": "0.30%",
-      "priceRatio": 0.01,
-      "sqrtPriceX96": "7922816251426433759354395033600000",
-      "currentTick": "230270",
-      "targetPricing": "1 CLEAN2 = 100 CLEAN",
-      "createdAt": "2025-08-26T10:34:27.127Z"
-    },
     "WPUSH_pUSDC_500": {
       "name": "WPUSH/pUSDC Pool",
       "address": "0xdd48D507908F9ebffbe28D6FbE28a167aA449841",
@@ -78,4 +41,3 @@
       "createdAt": "2025-08-27T12:01:58.816Z"
     }
   }
-}
