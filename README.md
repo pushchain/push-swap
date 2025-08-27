@@ -18,9 +18,20 @@ push-swap/
 └── package.json                    # Dependencies and scripts
 ```
 
+## Deployed Addresses
+
+The following files contain deployed contract addresses and pool information:
+
+- **[`core-deployment.json`](./core-deployment.json)** - Uniswap V3 core contracts deployment:
+
+- **[`periphery-deployment.json`](./periphery-deployment.json)** - Uniswap V3 periphery contracts deployment:
+
+- **[`test-addresses.json`](./test-addresses.json)** - Current active deployment addresses:
+
+
 ## Quick Start
 
-### Deploy Complete pools with liquidity 
+### Deploy Complete pools with liquidity
 ```bash
 npm run deploy-dex
 ```
