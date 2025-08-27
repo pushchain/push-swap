@@ -5,11 +5,11 @@ async function deployAll() {
     console.log('='.repeat(60));
     console.log('📋 Plan:');
     console.log('├─ 1. Deploy pETH and pUSDC tokens');
-    console.log('├─ 2. Create pETH/pUSDC pool (1 pETH = 4000 pUSDC)');
+    console.log('├─ 2. Create pETH/pUSDC pool');
     console.log('├─ 3. Add liquidity and test swap');
-    console.log('├─ 4. Create WPUSH/pUSDC pool (1 WPUSH = 1000 pUSDC)');
+    console.log('├─ 4. Create WPUSH/pUSDC pool');
     console.log('├─ 5. Add liquidity and test swap');
-    console.log('├─ 6. Create pETH/WPUSH pool (calculated from above)');
+    console.log('├─ 6. Create pETH/WPUSH pool');
     console.log('└─ 7. Add liquidity and test swap');
     console.log('');
 
@@ -26,10 +26,13 @@ async function deployAll() {
         console.log('✅ Tokens deployed successfully!\n');
 
         // Step 2: Create pETH/pUSDC pool
-        console.log('🟢 STEP 2: Create pETH/pUSDC pool (1 pETH = 4000 pUSDC)');
+        const pethUsdcPriceRatio = 4000;
+        const pethUsdcLiquidity0 = "10";
+        const pethUsdcLiquidity1 = "40000";
+        console.log('🟢 STEP 2: Create pETH/pUSDC pool');
         console.log('-'.repeat(50));
         const pethUsdcPool = await createPool(
-            pETHAddress, pUSDCAddress, 4000, 3000, true, "10", "40000"
+            pETHAddress, pUSDCAddress, pethUsdcPriceRatio, 3000, true, pethUsdcLiquidity0, pethUsdcLiquidity1
         );
         console.log('✅ pETH/pUSDC pool created and liquidity added!\n');
 
@@ -40,11 +43,14 @@ async function deployAll() {
         console.log('✅ pETH/pUSDC swap test successful!\n');
 
         // Step 4: Create WPUSH/pUSDC pool
-        console.log('🟢 STEP 4: Create WPUSH/pUSDC pool (1 WPUSH = 1000 pUSDC)');
+        const wpushUsdcPriceRatio = 1000;
+        const wpushUsdcLiquidity0 = "1";
+        const wpushUsdcLiquidity1 = "1000";
+        console.log('🟢 STEP 4: Create WPUSH/pUSDC pool');
         console.log('-'.repeat(50));
-        const wpushAddress = "0x884B23638596A7DCbbC133Ba671e4F2A2dedf285"; // Fresh WPUSH deployment
+        const wpushAddress = "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818"; // Updated WPUSH deployment
         const wpushUsdcPool = await createPool(
-            wpushAddress, pUSDCAddress, 1000, 3000, true, "1", "1000"
+            wpushAddress, pUSDCAddress, wpushUsdcPriceRatio, 3000, true, wpushUsdcLiquidity0, wpushUsdcLiquidity1
         );
         console.log('✅ WPUSH/pUSDC pool created and liquidity added!\n');
 
@@ -55,12 +61,14 @@ async function deployAll() {
         console.log('✅ WPUSH/pUSDC swap test successful!\n');
 
         // Step 6: Create pETH/WPUSH pool
-        // From the ratios: 1 pETH = 4000 pUSDC, 1 WPUSH = 1000 pUSDC
-        // Therefore: 1 pETH = 4 WPUSH (or 1 WPUSH = 0.25 pETH)
-        console.log('🟢 STEP 6: Create pETH/WPUSH pool (1 pETH = 4 WPUSH)');
+        // Calculate the ratio from the other two pools
+        const pethWpushPriceRatio = pethUsdcPriceRatio / wpushUsdcPriceRatio;
+        const pethWpushLiquidity0 = "1";
+        const pethWpushLiquidity1 = "1";
+        console.log('🟢 STEP 6: Create pETH/WPUSH pool');
         console.log('-'.repeat(50));
         const pethWpushPool = await createPool(
-            pETHAddress, wpushAddress, 4, 3000, true, "1", "1"
+            pETHAddress, wpushAddress, pethWpushPriceRatio, 3000, true, pethWpushLiquidity0, pethWpushLiquidity1
         );
         console.log('✅ pETH/WPUSH pool created and liquidity added!\n');
 
@@ -80,9 +88,9 @@ async function deployAll() {
         console.log('└─ All pools tested and working!');
         console.log('');
         console.log('💰 Price Relationships:');
-        console.log('├─ 1 pETH = 4000 pUSDC');
-        console.log('├─ 1 WPUSH = 1000 pUSDC');
-        console.log('└─ 1 pETH = 4 WPUSH');
+        console.log(`├─ 1 pETH = ${pethUsdcPriceRatio} pUSDC`);
+        console.log(`├─ 1 WPUSH = ${wpushUsdcPriceRatio} pUSDC`);
+        console.log(`└─ 1 pETH = ${pethWpushPriceRatio} WPUSH`);
         console.log('');
         console.log('🚀 Your DEX is ready for trading!');
 

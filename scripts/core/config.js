@@ -3,7 +3,7 @@ const { ethers } = require('ethers');
 // Contract addresses from deployment (using existing WPUSH)
 const CONTRACTS = {
     factory: '0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5',
-    wpush: '0x884B23638596A7DCbbC133Ba671e4F2A2dedf285', // Fresh WPUSH deployment
+    wpush: '0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818', // Updated WPUSH deployment
     swapRouter: '0x34B10a283c2331Afa2C7a6bb5FB961E01f218fa0',
     positionManager: '0xf90F08fD301190Cd34CC9eFc5A76351e95051670',
     quoterV2: '0x4e8152fB4C72De9f187Cc93E85135283517B2fbB',

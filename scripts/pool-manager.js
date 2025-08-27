@@ -187,7 +187,7 @@ async function createPool(token0Address, token1Address, priceRatio, fee = 3000, 
         throw new Error('Price ratio must be positive');
     }
     if (priceRatio > 1e12 || priceRatio < 1e-12) {
-        console.log('⚠️  Warning: Price ratio seems extreme. Ensure you\'re using human-readable ratios (e.g., 1 ETH = 3000 USDC → ratio=3000)');
+        console.log('⚠️  Warning: Price ratio seems extreme. Ensure you\'re using human-readable ratios');
     }
     console.log(`💰 Price Ratio: ${priceRatio} (token1/token0)`);
 

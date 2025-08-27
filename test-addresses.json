@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastUpdated": "2025-08-26",
+  "lastUpdated": "2025-08-27",
   "productionPools": {},
   "network": {
     "name": "Push Chain",
@@ -9,7 +9,7 @@
   },
   "contracts": {
     "factory": "0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5",
-    "wpush": "0x884B23638596A7DCbbC133Ba671e4F2A2dedf285",
+    "wpush": "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818",
     "swapRouter": "0x34B10a283c2331Afa2C7a6bb5FB961E01f218fa0",
     "positionManager": "0xf90F08fD301190Cd34CC9eFc5A76351e95051670",
     "quoterV2": "0x4e8152fB4C72De9f187Cc93E85135283517B2fbB",
@@ -41,7 +41,7 @@
     "pUSDC": {
       "name": "Push USDC",
       "symbol": "pUSDC",
-      "address": "0xD96109bb0C7FE025a5F0067E7D20d6Dcdb519b93",
+      "address": "0xBeEcDAf9aE39d6c71c29F0344346F6B4C500BB4F",
       "decimals": 6,
       "totalSupply": "10000000"
     }
@@ -62,35 +62,20 @@
       "targetPricing": "1 CLEAN2 = 100 CLEAN",
       "createdAt": "2025-08-26T10:34:27.127Z"
     },
-    "WPUSH_pUSDC_3000": {
+    "WPUSH_pUSDC_500": {
       "name": "WPUSH/pUSDC Pool",
-      "address": "0x6B26A033389aD63fB3864A7Ab191a22b348e38Ba",
-      "token0": "0x884B23638596A7DCbbC133Ba671e4F2A2dedf285",
-      "token1": "0xD96109bb0C7FE025a5F0067E7D20d6Dcdb519b93",
+      "address": "0xdd48D507908F9ebffbe28D6FbE28a167aA449841",
+      "token0": "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818",
+      "token1": "0xBeEcDAf9aE39d6c71c29F0344346F6B4C500BB4F",
       "token0Symbol": "WPUSH",
       "token1Symbol": "pUSDC",
-      "fee": 3000,
-      "feePercentage": "0.30%",
-      "priceRatio": 1000,
-      "sqrtPriceX96": "2505414483750479311864138",
-      "currentTick": "-207244",
-      "targetPricing": "1 WPUSH = 0.001 pUSDC",
-      "createdAt": "2025-08-26T10:37:20.429Z"
-    },
-    "WPUSH_pUSDC_10000": {
-      "name": "WPUSH/pUSDC Pool",
-      "address": "0xecfa6b635a09b7d43AB72d1e4072CF32C340FbCf",
-      "token0": "0x884B23638596A7DCbbC133Ba671e4F2A2dedf285",
-      "token1": "0xD96109bb0C7FE025a5F0067E7D20d6Dcdb519b93",
-      "token0Symbol": "WPUSH",
-      "token1Symbol": "pUSDC",
-      "fee": 10000,
-      "feePercentage": "1.00%",
+      "fee": 500,
+      "feePercentage": "0.05%",
       "priceRatio": 2,
       "sqrtPriceX96": "112045541949572279837463",
       "currentTick": "-269393",
-      "targetPricing": "1 WPUSH = 0.5 pUSDC",
-      "createdAt": "2025-08-27T07:20:35.215Z"
+      "targetPricing": "1 WPUSH = 2 pUSDC",
+      "createdAt": "2025-08-27T12:01:58.816Z"
     }
   }
 }
