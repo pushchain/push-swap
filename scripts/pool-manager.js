@@ -53,8 +53,8 @@ async function safeApprove(tokenContract, spenderAddress, amount, signerAddress)
     }
 }
 
-// Deploy PRC20 tokens
-async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supply, token2Symbol, token2Name, token2Decimals, token2Supply) {
+// Deploy PRC20 tokens (supports single or dual token deployment)
+async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supply, token2Symbol = null, token2Name = null, token2Decimals = null, token2Supply = null) {
     console.log('🪙 DEPLOYING PRC20 TOKENS');
     console.log('='.repeat(50));
 
@@ -81,20 +81,23 @@ async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supp
         );
         await token1.deployed();
 
-        // Deploy Token 2 (PRC20)
-        console.log(`├─ Deploying ${token2Symbol} (PRC20)...`);
-        const token2 = await PRC20Factory.connect(signer).deploy(
-            token2Name,                                    // name
-            token2Symbol,                                  // symbol
-            token2Decimals,                               // decimals
-            1,                                            // sourceChainId (mock)
-            2,                                            // TokenType.ERC20
-            21000,                                        // gasLimit (mock)
-            0,                                            // protocolFlatFee
-            universalExecutor,                            // universalExecutor
-            handlerAddress                                // handler
-        );
-        await token2.deployed();
+        // Deploy Token 2 (PRC20) - only if parameters are provided
+        let token2 = null;
+        if (token2Symbol && token2Name && token2Decimals !== null) {
+            console.log(`├─ Deploying ${token2Symbol} (PRC20)...`);
+            token2 = await PRC20Factory.connect(signer).deploy(
+                token2Name,                                    // name
+                token2Symbol,                                  // symbol
+                token2Decimals,                               // decimals
+                1,                                            // sourceChainId (mock)
+                2,                                            // TokenType.ERC20
+                21000,                                        // gasLimit (mock)
+                0,                                            // protocolFlatFee
+                universalExecutor,                            // universalExecutor
+                handlerAddress                                // handler
+            );
+            await token2.deployed();
+        }
 
         const deployedTokens = {
             [token1Symbol]: {
@@ -103,18 +106,23 @@ async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supp
                 name: await token1.name(),
                 symbol: await token1.symbol(),
                 decimals: token1Decimals
-            },
-            [token2Symbol]: {
+            }
+        };
+
+        console.log(`├─ ${token1Symbol} deployed:`, token1.address);
+
+        // Add token2 to deployedTokens if it exists
+        if (token2) {
+            deployedTokens[token2Symbol] = {
                 contract: token2,
                 address: token2.address,
                 name: await token2.name(),
                 symbol: await token2.symbol(),
                 decimals: token2Decimals
-            }
-        };
+            };
+            console.log(`├─ ${token2Symbol} deployed:`, token2.address);
+        }
 
-        console.log(`├─ ${token1Symbol} deployed:`, token1.address);
-        console.log(`├─ ${token2Symbol} deployed:`, token2.address);
         console.log('└─ ✅ Tokens deployed successfully!');
 
         // Save addresses with proper structure
@@ -146,13 +154,17 @@ async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supp
             decimals: token1Decimals,
             totalSupply: token1Supply
         };
-        addressesData.testTokens[token2Symbol] = {
-            name: deployedTokens[token2Symbol].name,
-            symbol: deployedTokens[token2Symbol].symbol,
-            address: deployedTokens[token2Symbol].address,
-            decimals: token2Decimals,
-            totalSupply: token2Supply
-        };
+
+        // Save token2 data if it exists
+        if (token2) {
+            addressesData.testTokens[token2Symbol] = {
+                name: deployedTokens[token2Symbol].name,
+                symbol: deployedTokens[token2Symbol].symbol,
+                address: deployedTokens[token2Symbol].address,
+                decimals: token2Decimals,
+                totalSupply: token2Supply
+            };
+        }
 
         fs.writeFileSync(addressesPath, JSON.stringify(addressesData, null, 2));
         console.log('💾 Addresses saved to test-addresses.json');
@@ -712,9 +724,19 @@ async function main() {
     try {
         switch (command) {
             case 'deploy-tokens':
-                // node pool-manager.js deploy-tokens pETH "Push ETH" 18 1000000 pUSDC "Push USDC" 6 10000000
+                // node pool-manager.js deploy-tokens pETH "Push ETH" 18 1000000 [pUSDC "Push USDC" 6 10000000]
                 const [token1Symbol, token1Name, token1Decimals, token1Supply, token2Symbol, token2Name, token2Decimals, token2Supply] = args.slice(1);
-                await deployTokens(token1Symbol, token1Name, parseInt(token1Decimals), token1Supply, token2Symbol, token2Name, parseInt(token2Decimals), token2Supply);
+
+                // Handle single token deployment (4 args) or dual token deployment (8 args)
+                if (args.length === 5) {
+                    // Single token: deploy-tokens pUSDC "Push USDC" 6 10000000
+                    await deployTokens(token1Symbol, token1Name, parseInt(token1Decimals), token1Supply);
+                } else if (args.length === 9) {
+                    // Dual tokens: deploy-tokens pETH "Push ETH" 18 1000000 pUSDC "Push USDC" 6 10000000
+                    await deployTokens(token1Symbol, token1Name, parseInt(token1Decimals), token1Supply, token2Symbol, token2Name, parseInt(token2Decimals), token2Supply);
+                } else {
+                    throw new Error('Invalid number of arguments. Use: deploy-tokens <symbol> <name> <decimals> <supply> [symbol2 name2 decimals2 supply2]');
+                }
                 break;
 
             case 'create-pool':
@@ -743,7 +765,7 @@ async function main() {
 
             default:
                 console.log('Usage:');
-                console.log('  deploy-tokens <token1Symbol> <token1Name> <token1Decimals> <token1Supply> <token2Symbol> <token2Name> <token2Decimals> <token2Supply>');
+                console.log('  deploy-tokens <token1Symbol> <token1Name> <token1Decimals> <token1Supply> [token2Symbol token2Name token2Decimals token2Supply]');
                 console.log('  create-pool <token0Address> <token1Address> <priceRatio> [fee] [addLiquidity] [amount0] [amount1]');
                 console.log('  add-liquidity <poolAddress> <token0Address> <token1Address> <amount0> <amount1>');
                 console.log('  swap <poolAddress> <tokenInAddress> <tokenOutAddress> <amountIn>');
