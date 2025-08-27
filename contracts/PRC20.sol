@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.29;
+pragma solidity 0.8.26;
 
 import {IHandler} from "./interfaces/IHandler.sol";
 import {IPRC20} from "./interfaces/IPRC20.sol";
 import {PRC20Errors as Errors} from "./libraries/Errors.sol";
 
-/// @title  TestPRC20 — Simplified PRC20 for Testing
-/// @notice ERC-20 compatible synthetic token for testing Uniswap V3 integration
-/// @dev    Simplified version of PRC20 that uses EOA as handler for testing
-contract TestPRC20 is IPRC20 {
+/// @title  PRC20 — Push Chain Synthetic Token (ZRC20-inspired)
+/// @notice ERC-20 compatible synthetic token minted/burned by Push Chain protocol.
+/// @dev    All imperative functionality is handled by the Handler contract and Universal Executor Module.
+contract PRC20 is IPRC20 {
     //*** STATES ***//
 
     /// @notice The protocol's privileged executor module (auth & fee sink)
@@ -57,7 +57,6 @@ contract TestPRC20 is IPRC20 {
     /// @param protocolFlatFee_   Absolute flat fee added to fee computation (units: gas coin PRC20)
     /// @param universalExecutor_ Address of Universal Executor Module (auth & fee sink)
     /// @param handler_           Initial handler contract providing gas coin & gas price
-    /// @param initialSupply_     Initial token supply to mint to deployer (for testing)
     constructor(
         string memory name_,
         string memory symbol_,
@@ -67,8 +66,7 @@ contract TestPRC20 is IPRC20 {
         uint256 gasLimit_,
         uint256 protocolFlatFee_,
         address universalExecutor_,
-        address handler_,
-        uint256 initialSupply_
+        address handler_
     ) {
         if (universalExecutor_ == address(0) || handler_ == address(0))
             revert Errors.ZeroAddress();
@@ -83,11 +81,6 @@ contract TestPRC20 is IPRC20 {
         PC_PROTOCOL_FEE = protocolFlatFee_;
         UNIVERSAL_EXECUTOR_MODULE = universalExecutor_;
         HANDLER_CONTRACT = handler_;
-
-        // Mint initial supply to deployer for testing
-        if (initialSupply_ > 0) {
-            _mint(msg.sender, initialSupply_);
-        }
     }
 
     //*** VIEW FUNCTIONS ***//
@@ -168,7 +161,7 @@ contract TestPRC20 is IPRC20 {
         return true;
     }
 
-    //*** BRIDGE ENTRYPOINTS (SIMPLIFIED FOR TESTING) ***//
+    //*** BRIDGE ENTRYPOINTS ***//
 
     /// @notice Mint PRC20 on inbound bridge (lock on source)
     /// @dev Only callable by HANDLER_CONTRACT or UNIVERSAL_EXECUTOR_MODULE
@@ -186,44 +179,70 @@ contract TestPRC20 is IPRC20 {
         return true;
     }
 
-    /// @notice Simplified withdraw for testing (no gas fee charging)
+    /// @notice Burn and request outbound unlock on source, charging gas fee in the per-chain gas coin PRC20
+    /// @dev Caller (user/app) must have approved this PRC20 (for burn via this function)
+    ///      AND approved the gas coin PRC20 to allow this contract to pull `gasFee` to UNIVERSAL_EXECUTOR_MODULE.
     /// @param to      Destination address on source chain (as raw bytes)
     /// @param amount  Amount of this PRC20 to burn
     function withdraw(
         bytes calldata to,
         uint256 amount
     ) external returns (bool) {
-        // For testing, we'll skip the gas fee mechanism
-        // In production, this would charge gas fees
+        (address gasToken, uint256 gasFee) = withdrawGasFee();
+
+        bool result = IPRC20(gasToken).transferFrom(
+            msg.sender,
+            UNIVERSAL_EXECUTOR_MODULE,
+            gasFee
+        );
+        if (!result) revert Errors.GasFeeTransferFailed();
 
         _burn(msg.sender, amount);
-        emit Withdrawal(msg.sender, to, amount, 0, 0); // Zero fees for testing
+        emit Withdrawal(msg.sender, to, amount, gasFee, PC_PROTOCOL_FEE);
         return true;
     }
 
-    //*** GAS FEE QUOTING (SIMPLIFIED FOR TESTING) ***//
+    //*** GAS FEE QUOTING (VIEW) ***//
 
-    /// @notice Simplified gas fee computation for testing
-    /// @return gasToken  Returns this contract address as mock gas token
-    /// @return gasFee   Returns zero for testing
+    /// @notice Compute gas coin token and fee for a withdraw using current GAS_LIMIT
+    /// @return gasToken  PRC20 token used as gas coin for SOURCE_CHAIN_ID
+    /// @return gasFee   price * GAS_LIMIT + PC_PROTOCOL_FEE
     function withdrawGasFee()
         public
         view
         returns (address gasToken, uint256 gasFee)
     {
-        gasToken = address(this); // Mock: use self as gas token
-        gasFee = 0; // Zero fees for testing
+        gasToken = IHandler(HANDLER_CONTRACT).gasTokenPRC20ByChainId(
+            SOURCE_CHAIN_ID
+        );
+        if (gasToken == address(0)) revert Errors.ZerogasToken();
+
+        uint256 price = IHandler(HANDLER_CONTRACT).gasPriceByChainId(
+            SOURCE_CHAIN_ID
+        );
+        if (price == 0) revert Errors.ZeroGasPrice();
+
+        gasFee = price * GAS_LIMIT + PC_PROTOCOL_FEE;
     }
 
-    /// @notice Simplified gas fee computation with custom gas limit
-    /// @param gasLimit_  Gas limit (ignored in testing)
-    /// @return gasToken   Returns this contract address
-    /// @return gasFee    Returns zero for testing
+    /// @notice Compute gas coin token and fee for a withdraw given a custom gasLimit
+    /// @param gasLimit_  Gas limit to use for the quote
+    /// @return gasToken   PRC20 gas coin token
+    /// @return gasFee    price * gasLimit_ + PC_PROTOCOL_FEE
     function withdrawGasFeeWithGasLimit(
         uint256 gasLimit_
     ) external view returns (address gasToken, uint256 gasFee) {
-        gasToken = address(this);
-        gasFee = 0; // Zero fees for testing
+        gasToken = IHandler(HANDLER_CONTRACT).gasTokenPRC20ByChainId(
+            SOURCE_CHAIN_ID
+        );
+        if (gasToken == address(0)) revert Errors.ZerogasToken();
+
+        uint256 price = IHandler(HANDLER_CONTRACT).gasPriceByChainId(
+            SOURCE_CHAIN_ID
+        );
+        if (price == 0) revert Errors.ZeroGasPrice();
+
+        gasFee = price * gasLimit_ + PC_PROTOCOL_FEE;
     }
 
     //*** ADMIN ***//
@@ -260,15 +279,6 @@ contract TestPRC20 is IPRC20 {
     /// @notice Update token symbol (optional, parity with ZRC20 mutability)
     function setSymbol(string memory newSymbol) external onlyUniversalExecutor {
         _symbol = newSymbol;
-    }
-
-    //*** TESTING HELPERS ***//
-
-    /// @notice Mint tokens to any address (for testing only)
-    /// @dev In production, this would be restricted
-    function mint(address to, uint256 amount) external returns (bool) {
-        _mint(to, amount);
-        return true;
     }
 
     //*** INTERNAL ERC-20 HELPERS ***//

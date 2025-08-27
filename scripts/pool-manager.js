@@ -60,7 +60,7 @@ async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supp
 
     try {
         const signer = config.getSigner();
-        const TestPRC20Factory = await ethers.getContractFactory('TestPRC20');
+        const PRC20Factory = await ethers.getContractFactory('PRC20');
 
         // Use deployer address as handler and universal executor for testing
         const handlerAddress = signer.address;
@@ -68,23 +68,22 @@ async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supp
 
         // Deploy Token 1 (PRC20)
         console.log(`├─ Deploying ${token1Symbol} (PRC20)...`);
-        const token1 = await TestPRC20Factory.connect(signer).deploy(
+        const token1 = await PRC20Factory.connect(signer).deploy(
             token1Name,                                    // name
             token1Symbol,                                  // symbol  
             token1Decimals,                               // decimals
             1,                                            // sourceChainId (mock)
-            2,                                            // TokenType.PC
+            2,                                            // TokenType.ERC20
             21000,                                        // gasLimit (mock)
             0,                                            // protocolFlatFee
             universalExecutor,                            // universalExecutor
-            handlerAddress,                               // handler
-            ethers.utils.parseUnits(token1Supply, token1Decimals) // initialSupply
+            handlerAddress                                // handler
         );
         await token1.deployed();
 
         // Deploy Token 2 (PRC20)
         console.log(`├─ Deploying ${token2Symbol} (PRC20)...`);
-        const token2 = await TestPRC20Factory.connect(signer).deploy(
+        const token2 = await PRC20Factory.connect(signer).deploy(
             token2Name,                                    // name
             token2Symbol,                                  // symbol
             token2Decimals,                               // decimals
@@ -93,8 +92,7 @@ async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supp
             21000,                                        // gasLimit (mock)
             0,                                            // protocolFlatFee
             universalExecutor,                            // universalExecutor
-            handlerAddress,                               // handler
-            ethers.utils.parseUnits(token2Supply, token2Decimals) // initialSupply
+            handlerAddress                                // handler
         );
         await token2.deployed();
 
