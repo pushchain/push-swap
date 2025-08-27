@@ -38,6 +38,11 @@ Creates a 3-pool DEX with:
 node scripts/pool-manager.js deploy-tokens pETH "Push ETH" 18 1000000 pUSDC "Push USDC" 6 10000000
 ```
 
+**Or, deploye a single token**
+```bash
+node scripts/pool-manager.js deploy-tokens pUSDC "Push USDC" 6 10000000
+```
+
 **Create Pool:**
 ```bash
 node scripts/pool-manager.js create-pool [pETH_addr] [WPUSH_addr] 4 3000 true 1 4
