@@ -154,6 +154,24 @@ function sortTokens(tokenA, tokenB) {
     return tokenA.toLowerCase() < tokenB.toLowerCase() ? [tokenA, tokenB] : [tokenB, tokenA];
 }
 
+// Simple WPUSH balance check and deposit
+async function ensureWPUSH(amount) {
+    const signer = getSigner();
+    const wpushContract = getContract('wpush');
+
+    const currentBalance = await wpushContract.balanceOf(signer.address);
+    const amountParsed = parseToken(amount, 18);
+
+    if (currentBalance.lt(amountParsed)) {
+        const needed = amountParsed.sub(currentBalance);
+        console.log(`├─ WPUSH balance low, depositing ${formatToken(needed, 18)} PUSH...`);
+
+        const depositTx = await wpushContract.deposit({ value: needed });
+        await depositTx.wait();
+        console.log(`├─ ✅ WPUSH balance updated`);
+    }
+}
+
 // Export everything
 module.exports = {
     CONTRACTS,
@@ -163,5 +181,6 @@ module.exports = {
     getContract,
     formatToken,
     parseToken,
-    sortTokens
+    sortTokens,
+    ensureWPUSH
 }; 

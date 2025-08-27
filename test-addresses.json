@@ -1,0 +1,96 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-08-26",
+  "productionPools": {},
+  "network": {
+    "name": "Push Chain",
+    "chainId": 42101,
+    "rpcUrl": "https://evm.rpc-testnet-donut-node1.push.org"
+  },
+  "contracts": {
+    "factory": "0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5",
+    "wpush": "0x884B23638596A7DCbbC133Ba671e4F2A2dedf285",
+    "swapRouter": "0x34B10a283c2331Afa2C7a6bb5FB961E01f218fa0",
+    "positionManager": "0xf90F08fD301190Cd34CC9eFc5A76351e95051670",
+    "quoterV2": "0x4e8152fB4C72De9f187Cc93E85135283517B2fbB",
+    "tickLens": "0x83D3B8bAe05C36b5404c1e284D306a6a1351Ef60",
+    "multicall": "0x0b19E6e4dA71Be4F12db104373340d8fFc49880A"
+  },
+  "testTokens": {
+    "CLEAN": {
+      "name": "Clean Token 1",
+      "symbol": "CLEAN",
+      "address": "0xC2a3B712374e5CC59100D9163969F77feBE9423b",
+      "decimals": 18,
+      "totalSupply": "1000000"
+    },
+    "CLEAN2": {
+      "name": "Clean Token 2",
+      "symbol": "CLEAN2",
+      "address": "0x4264c1AD0292d8625d02f256402ff1D6B0DC4Bd2",
+      "decimals": 6,
+      "totalSupply": "5000000"
+    },
+    "PC": {
+      "name": "Push Chain Native",
+      "symbol": "PC",
+      "address": "0x09dd23C08a2E857Cb0f2d5E79ce3a2680925D940",
+      "decimals": 18,
+      "totalSupply": "1000000"
+    },
+    "pUSDC": {
+      "name": "Push USDC",
+      "symbol": "pUSDC",
+      "address": "0xD96109bb0C7FE025a5F0067E7D20d6Dcdb519b93",
+      "decimals": 6,
+      "totalSupply": "10000000"
+    }
+  },
+  "pools": {
+    "CLEAN2_CLEAN_3000": {
+      "name": "CLEAN2/CLEAN Pool",
+      "address": "0x06b4a1789475336De536f68370E690BE28f89c0C",
+      "token0": "0x4264c1AD0292d8625d02f256402ff1D6B0DC4Bd2",
+      "token1": "0xC2a3B712374e5CC59100D9163969F77feBE9423b",
+      "token0Symbol": "CLEAN2",
+      "token1Symbol": "CLEAN",
+      "fee": 3000,
+      "feePercentage": "0.30%",
+      "priceRatio": 0.01,
+      "sqrtPriceX96": "7922816251426433759354395033600000",
+      "currentTick": "230270",
+      "targetPricing": "1 CLEAN2 = 100 CLEAN",
+      "createdAt": "2025-08-26T10:34:27.127Z"
+    },
+    "WPUSH_pUSDC_3000": {
+      "name": "WPUSH/pUSDC Pool",
+      "address": "0x6B26A033389aD63fB3864A7Ab191a22b348e38Ba",
+      "token0": "0x884B23638596A7DCbbC133Ba671e4F2A2dedf285",
+      "token1": "0xD96109bb0C7FE025a5F0067E7D20d6Dcdb519b93",
+      "token0Symbol": "WPUSH",
+      "token1Symbol": "pUSDC",
+      "fee": 3000,
+      "feePercentage": "0.30%",
+      "priceRatio": 1000,
+      "sqrtPriceX96": "2505414483750479311864138",
+      "currentTick": "-207244",
+      "targetPricing": "1 WPUSH = 0.001 pUSDC",
+      "createdAt": "2025-08-26T10:37:20.429Z"
+    },
+    "WPUSH_pUSDC_10000": {
+      "name": "WPUSH/pUSDC Pool",
+      "address": "0xecfa6b635a09b7d43AB72d1e4072CF32C340FbCf",
+      "token0": "0x884B23638596A7DCbbC133Ba671e4F2A2dedf285",
+      "token1": "0xD96109bb0C7FE025a5F0067E7D20d6Dcdb519b93",
+      "token0Symbol": "WPUSH",
+      "token1Symbol": "pUSDC",
+      "fee": 10000,
+      "feePercentage": "1.00%",
+      "priceRatio": 2,
+      "sqrtPriceX96": "112045541949572279837463",
+      "currentTick": "-269393",
+      "targetPricing": "1 WPUSH = 0.5 pUSDC",
+      "createdAt": "2025-08-27T07:20:35.215Z"
+    }
+  }
+}

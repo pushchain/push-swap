@@ -4,6 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const BN = require('bignumber.js');
 
+// Import WPUSH management function
+const { ensureWPUSH } = require('./core/config');
+
 // Precise sqrt price calculation using bignumber.js to match Uniswap's encodePriceSqrt
 function calculateSqrtPriceX96Precise(priceRatio, token0Decimals, token1Decimals) {
     BN.config({ EXPONENTIAL_AT: 999999, DECIMAL_PLACES: 40 });
@@ -348,6 +351,15 @@ async function addLiquidityToPool(poolAddress, inputToken0Address, inputToken1Ad
         const signer = config.getSigner();
         const positionManager = config.getContract('positionManager');
 
+        // Check if we need WPUSH for this liquidity addition
+        const wpushAddress = config.CONTRACTS.wpush;
+        if (inputToken0Address.toLowerCase() === wpushAddress.toLowerCase()) {
+            await ensureWPUSH(inputAmount0);
+        }
+        if (inputToken1Address.toLowerCase() === wpushAddress.toLowerCase()) {
+            await ensureWPUSH(inputAmount1);
+        }
+
         // Get input token contracts
         const inputToken0 = new ethers.Contract(inputToken0Address, config.ABIS.prc20, signer);
         const inputToken1 = new ethers.Contract(inputToken1Address, config.ABIS.prc20, signer);
@@ -483,6 +495,12 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
     try {
         const signer = config.getSigner();
         const swapRouter = config.getContract('swapRouter');
+
+        // Check if we need WPUSH for this swap (if tokenIn is WPUSH)
+        const wpushAddress = config.CONTRACTS.wpush;
+        if (tokenInAddress.toLowerCase() === wpushAddress.toLowerCase()) {
+            await ensureWPUSH(amountIn);
+        }
 
         // Get token contracts
         const tokenIn = new ethers.Contract(tokenInAddress, config.ABIS.prc20, signer);

@@ -1,0 +1,20 @@
+{
+  "network": "unknown",
+  "chainId": 42101,
+  "deployer": "0xEbf0Cfc34E07ED03c05615394E2292b387B63F12",
+  "timestamp": "2025-08-25T19:15:24.415Z",
+  "dependencies": {
+    "factory": "0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5",
+    "wpush": "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17"
+  },
+  "contracts": {
+    "nftDescriptor": "0x4cBD1E2E6f44C0e406F5FfC9bb5312a281610E94",
+    "positionDescriptor": "0xF250af70a3Cb3ba4377Eb77408e959ebFe025F3c",
+    "swapRouter": "0x34B10a283c2331Afa2C7a6bb5FB961E01f218fa0",
+    "positionManager": "0xf90F08fD301190Cd34CC9eFc5A76351e95051670",
+    "quoterV2": "0x4e8152fB4C72De9f187Cc93E85135283517B2fbB",
+    "tickLens": "0x83D3B8bAe05C36b5404c1e284D306a6a1351Ef60",
+    "multicall": "0x0b19E6e4dA71Be4F12db104373340d8fFc49880A",
+    "migrator": "0x10cB82cb3Fa3cf01855cF90AbF61855Cfe92d937"
+  }
+}

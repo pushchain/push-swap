@@ -101,6 +101,9 @@ deployments/
 !tsconfig*.json
 !hardhat.config.*
 !.prettierrc.json
+!test-addresses.json
+!core-deployment.json
+!periphery-deployment.json
 
 # Lock files (you may want to include these in some projects)
 package-lock.json
