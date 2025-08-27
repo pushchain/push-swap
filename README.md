@@ -44,12 +44,21 @@ Creates a 3-pool DEX with:
 
 ### Individual Operations
 
+**Get WPUSH Tokens:**
+```bash
+# Get 1 WPUSH (default)
+node scripts/pool-manager.js get-wpush
+
+# Get specific amount (e.g., 10 WPUSH)
+node scripts/pool-manager.js get-wpush 10
+```
+
 **Deploy Tokens:**
 ```bash
 node scripts/pool-manager.js deploy-tokens pETH "Push ETH" 18 1000000 pUSDC "Push USDC" 6 10000000
 ```
 
-**Or, deploye a single token**
+**Or, deploy a single token**
 ```bash
 node scripts/pool-manager.js deploy-tokens pUSDC "Push USDC" 6 10000000
 ```

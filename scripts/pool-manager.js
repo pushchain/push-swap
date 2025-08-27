@@ -716,6 +716,54 @@ async function addFullRangeLiquidity(poolAddress, token0Address, token1Address, 
     }
 }
 
+// Get WPUSH tokens by depositing PUSH
+async function getWPUSH(amount = '1') {
+    console.log('=== WPUSH Token Getter ===');
+
+    const signer = config.getSigner();
+    const userAddress = await signer.getAddress();
+
+    console.log(`├─ User Address: ${userAddress}`);
+
+    // Get current balances
+    const pcBalance = await signer.getBalance();
+    const wpushContract = config.getContract('wpush');
+    const wpushBalance = await wpushContract.balanceOf(userAddress);
+
+    console.log(`├─ Current PUSH Balance: ${config.formatToken(pcBalance, 18)}`);
+    console.log(`├─ Current WPUSH Balance: ${config.formatToken(wpushBalance, 18)}`);
+
+    const amountParsed = config.parseToken(amount, 18);
+
+    console.log(`├─ Requesting ${amount} WPUSH...`);
+
+    // Check if we have enough PUSH
+    if (pcBalance.lt(amountParsed)) {
+        console.log(`├─ ❌ Insufficient PUSH balance. Need ${config.formatToken(amountParsed, 18)} PUSH`);
+        return;
+    }
+
+    // Deposit PUSH to get WPUSH
+    console.log(`├─ Depositing ${amount} PUSH to get WPUSH...`);
+
+    try {
+        const depositTx = await wpushContract.deposit({ value: amountParsed });
+        console.log(`├─ Transaction hash: ${depositTx.hash}`);
+
+        await depositTx.wait();
+        console.log(`├─ ✅ Transaction confirmed!`);
+
+        // Check new balance
+        const newWpushBalance = await wpushContract.balanceOf(userAddress);
+        console.log(`├─ New WPUSH Balance: ${config.formatToken(newWpushBalance, 18)}`);
+
+        console.log(`└─ ✅ Successfully got ${amount} WPUSH!`);
+
+    } catch (error) {
+        console.log(`├─ ❌ Error: ${error.message}`);
+    }
+}
+
 // Main function to handle command line arguments
 async function main() {
     const args = process.argv.slice(2);
@@ -763,12 +811,19 @@ async function main() {
                 await addFullRangeLiquidity(poolAddr2, tok0Addr2, tok1Addr2, amount0_2, amount1_2);
                 break;
 
+            case 'get-wpush':
+                // node pool-manager.js get-wpush [amount]
+                const wpushAmount = args[1] || '1';
+                await getWPUSH(wpushAmount);
+                break;
+
             default:
                 console.log('Usage:');
                 console.log('  deploy-tokens <token1Symbol> <token1Name> <token1Decimals> <token1Supply> [token2Symbol token2Name token2Decimals token2Supply]');
                 console.log('  create-pool <token0Address> <token1Address> <priceRatio> [fee] [addLiquidity] [amount0] [amount1]');
                 console.log('  add-liquidity <poolAddress> <token0Address> <token1Address> <amount0> <amount1>');
                 console.log('  swap <poolAddress> <tokenInAddress> <tokenOutAddress> <amountIn>');
+                console.log('  get-wpush [amount] - Get WPUSH tokens by depositing PUSH');
         }
     } catch (error) {
         console.error('💥 Operation failed:', error);
