@@ -1,303 +1,421 @@
-# Smart Account Uniswap V3 Integration Guide
+# Cross-Chain Uniswap V3 Integration Guide
 
 ## Overview
 
-Smart accounts on Push Chain act as proxies that forward calldata to Uniswap V3 contracts using `.call()`. This guide covers how to interact with Uniswap V3 through smart account forwarding.
+This guide covers how to generate UniversalPayloads for Uniswap V3 operations that can be signed on any chain and executed on Push Chain through the Universal Executor Account (UEA_EVM) system.
 
-## 🏗️ Architecture
+## 🏗️ Cross-Chain Architecture
 
 ```
-User (EOA) → Calldata → Smart Account → .call(recipient, calldata) → Uniswap V3 Contracts
+User (Any Chain) → Signs UniversalPayload → UEA_EVM (Push Chain) → Verifies Signature → .call(recipient, calldata) → Uniswap V3 Contracts
 ```
 
-### Components:
-- **User (EOA)**: Sends transaction with recipient address and calldata
-- **Smart Account**: Forwards calldata to recipient using `.call()`
-- **Uniswap V3 Contracts**: Execute the actual operations
+### Flow:
+1. **User** generates UniversalPayload with Uniswap V3 calldata on any chain
+2. **User** signs the UniversalPayload with their private key using EIP-712
+3. **UEA_EVM** on Push Chain verifies the EIP-712 signature
+4. **UEA_EVM** executes the calldata on Uniswap V3 contracts using `.call()`
 
-## 🔧 Smart Account Implementation
+## 📋 UniversalPayload Structure
 
-### Basic Smart Account Structure:
+### Core Payload Structure
 ```solidity
-contract UniswapSmartAccount {
-    address public immutable owner;
-    
-    constructor(address _owner) {
-        owner = _owner;
-    }
-    
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner");
-        _;
-    }
-    
-    /// @notice Execute any contract call
-    /// @param target Contract address to call
-    /// @param data Calldata to send
-    function execute(address target, bytes calldata data) external onlyOwner {
-        (bool success, bytes memory result) = target.call(data);
-        require(success, "Call failed");
-    }
-    
-    /// @notice Emergency withdraw tokens
-    function emergencyWithdraw(address token) external onlyOwner {
-        uint256 balance = IERC20(token).balanceOf(address(this));
-        if (balance > 0) {
-            IERC20(token).transfer(owner, balance);
-        }
-    }
-    
-    /// @notice Emergency withdraw ETH
-    function emergencyWithdrawETH() external onlyOwner {
-        uint256 balance = address(this).balance;
-        if (balance > 0) {
-            payable(owner).transfer(balance);
-        }
-    }
-    
-    // Receive function to accept ETH
-    receive() external payable {}
+struct UniversalPayload {
+    address to;                    // Target contract address to call
+    uint256 value;                 // Native token amount to send
+    bytes data;                    // Call data for the function execution
+    uint256 gasLimit;              // Maximum gas to be used for this tx
+    uint256 maxFeePerGas;          // Maximum fee per gas unit
+    uint256 maxPriorityFeePerGas;  // Maximum priority fee per gas unit
+    uint256 nonce;                 // Nonce (managed by UEA)
+    uint256 deadline;              // Timestamp after which this payload is invalid
+    VerificationType vType;        // Type of verification (signedVerification or universalTxVerification)
 }
 ```
 
-## 📋 Available Functionalities
+### UniversalAccountId Structure
+```solidity
+struct UniversalAccountId {
+    string chainNamespace;         // Chain namespace (e.g., "eip155")
+    string chainId;                // Chain ID of the source chain
+    bytes owner;                   // Owner's public key or address in bytes
+}
+```
+
+## 🔧 Uniswap V3 Operation Payloads
 
 ### 1. Pool Creation
 Create new liquidity pools for any token pair.
 
-**User Call:**
+**UniversalPayload Generation:**
 ```javascript
 // Encode factory.createPool() call
+const factory = new ethers.Contract(factoryAddress, factoryABI);
 const calldata = factory.interface.encodeFunctionData('createPool', [
-    tokenA, 
-    tokenB, 
-    fee
+    tokenA,    // First token address
+    tokenB,    // Second token address
+    fee        // Fee tier: 500 (0.05%), 3000 (0.3%), or 10000 (1%) - choose based on expected volatility
 ]);
 
-// Smart account forwards to factory
-await smartAccount.execute(factory.address, calldata);
+const universalPayload = {
+    to: factoryAddress,                                       // Target contract address
+    value: "0x0",                                            // ETH value to send (0 for most operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 500000,                                        // Maximum gas to use (adjust based on operation complexity)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 3600,         // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
 ### 2. Pool Initialization
 Initialize pool with initial price.
 
-**User Call:**
+**UniversalPayload Generation:**
 ```javascript
 // Encode pool.initialize() call
+const pool = new ethers.Contract(poolAddress, poolABI);
 const calldata = pool.interface.encodeFunctionData('initialize', [
-    sqrtPriceX96
+    sqrtPriceX96  // Initial sqrt price in X96 format - calculate from desired token ratio (e.g., 1:2 ratio)
 ]);
 
-// Smart account forwards to pool
-await smartAccount.execute(pool.address, calldata);
+const universalPayload = {
+    to: poolAddress,                                          // Target pool contract address
+    value: "0x0",                                            // ETH value to send (0 for most operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 300000,                                        // Maximum gas to use (adjust based on operation complexity)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 3600,         // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
 ### 3. Add Liquidity
 Add liquidity to existing pools with specific tick ranges.
 
-**User Call:**
+**UniversalPayload Generation:**
 ```javascript
 // Encode positionManager.mint() call
+const positionManager = new ethers.Contract(positionManagerAddress, positionManagerABI);
 const mintParams = {
-    token0: token0Address,
-    token1: token1Address,
-    fee: 3000,
-    tickLower: -887220,
-    tickUpper: 887220,
-    amount0Desired: amount0,
-    amount1Desired: amount1,
-    amount0Min: 0,
-    amount1Min: 0,
-    recipient: userAddress,
-    deadline: deadline
+    token0: token0Address,                                    // First token address
+    token1: token1Address,                                    // Second token address
+    fee: 3000,                                                // Fee tier: 500 (0.05%), 3000 (0.3%), or 10000 (1%)
+    tickLower: -887220,                                       // Lower tick boundary - choose based on price range
+    tickUpper: 887220,                                        // Upper tick boundary - choose based on price range
+    amount0Desired: amount0,                                  // Amount of token0 to add (in wei)
+    amount1Desired: amount1,                                  // Amount of token1 to add (in wei)
+    amount0Min: 0,                                            // Minimum amount of token0 to receive (slippage protection)
+    amount1Min: 0,                                            // Minimum amount of token1 to receive (slippage protection)
+    recipient: userAddress,                                   // Address to receive the position NFT
+    deadline: Math.floor(Date.now() / 1000) + 3600           // Unix timestamp after which transaction reverts
 };
 
 const calldata = positionManager.interface.encodeFunctionData('mint', [mintParams]);
 
-// Smart account forwards to position manager
-await smartAccount.execute(positionManager.address, calldata);
+const universalPayload = {
+    to: positionManagerAddress,                               // Target position manager contract address
+    value: "0x0",                                            // ETH value to send (0 for most operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 800000,                                        // Maximum gas to use (higher for complex operations like minting)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 3600,         // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
 ### 4. Remove Liquidity
 Remove liquidity from positions.
 
-**User Call:**
+**UniversalPayload Generation:**
 ```javascript
 // Encode positionManager.decreaseLiquidity() call
 const decreaseParams = {
-    tokenId: tokenId,
-    liquidity: liquidity,
-    amount0Min: amount0Min,
-    amount1Min: amount1Min,
-    deadline: deadline
+    tokenId: tokenId,                                         // NFT token ID of the position
+    liquidity: liquidity,                                     // Amount of liquidity to remove (in wei)
+    amount0Min: amount0Min,                                   // Minimum amount of token0 to receive (slippage protection)
+    amount1Min: amount1Min,                                   // Minimum amount of token1 to receive (slippage protection)
+    deadline: Math.floor(Date.now() / 1000) + 3600           // Unix timestamp after which transaction reverts
 };
 
 const calldata = positionManager.interface.encodeFunctionData('decreaseLiquidity', [decreaseParams]);
 
-// Smart account forwards to position manager
-await smartAccount.execute(positionManager.address, calldata);
+const universalPayload = {
+    to: positionManagerAddress,                               // Target position manager contract address
+    value: "0x0",                                            // ETH value to send (0 for most operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 400000,                                        // Maximum gas to use (adjust based on operation complexity)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 3600,         // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
 ### 5. Single-Hop Swaps
 Execute token swaps with slippage protection.
 
-**User Call:**
+**UniversalPayload Generation:**
 ```javascript
 // Encode swapRouter.exactInputSingle() call
+const swapRouter = new ethers.Contract(swapRouterAddress, swapRouterABI);
 const swapParams = {
-    tokenIn: tokenInAddress,
-    tokenOut: tokenOutAddress,
-    fee: 3000,
-    recipient: userAddress,
-    deadline: deadline,
-    amountIn: amountIn,
-    amountOutMinimum: amountOutMinimum,
-    sqrtPriceLimitX96: 0
+    tokenIn: tokenInAddress,                                  // Address of token being sold
+    tokenOut: tokenOutAddress,                                // Address of token being bought
+    fee: 3000,                                                // Fee tier: 500 (0.05%), 3000 (0.3%), or 10000 (1%) - choose pool with best liquidity
+    recipient: userAddress,                                   // Address to receive the output tokens
+    deadline: Math.floor(Date.now() / 1000) + 300,           // Unix timestamp after which transaction reverts
+    amountIn: amountIn,                                       // Amount of input tokens to swap (in wei)
+    amountOutMinimum: amountOutMinimum,                       // Minimum amount of output tokens to receive (slippage protection)
+    sqrtPriceLimitX96: 0                                      // Price limit - 0 for no limit, or set specific price to prevent MEV
 };
 
 const calldata = swapRouter.interface.encodeFunctionData('exactInputSingle', [swapParams]);
 
-// Smart account forwards to swap router
-await smartAccount.execute(swapRouter.address, calldata);
+const universalPayload = {
+    to: swapRouterAddress,                                    // Target swap router contract address
+    value: "0x0",                                            // ETH value to send (0 for most operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 300000,                                        // Maximum gas to use (adjust based on operation complexity)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 300,           // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
 ### 6. Multi-Hop Swaps
 Execute swaps through multiple pools.
 
-**User Call:**
+**UniversalPayload Generation:**
 ```javascript
 // Encode swapRouter.exactInput() call
 const multiHopParams = {
-    path: encodedPath,
-    recipient: userAddress,
-    deadline: deadline,
-    amountIn: amountIn,
-    amountOutMinimum: amountOutMinimum
+    path: encodedPath,                                        // Encoded path through multiple pools (e.g., tokenA -> tokenB -> tokenC)
+    recipient: userAddress,                                   // Address to receive the output tokens
+    deadline: Math.floor(Date.now() / 1000) + 300,           // Unix timestamp after which transaction reverts
+    amountIn: amountIn,                                       // Amount of input tokens to swap (in wei)
+    amountOutMinimum: amountOutMinimum                        // Minimum amount of output tokens to receive (slippage protection)
 };
 
 const calldata = swapRouter.interface.encodeFunctionData('exactInput', [multiHopParams]);
 
-// Smart account forwards to swap router
-await smartAccount.execute(swapRouter.address, calldata);
+const universalPayload = {
+    to: swapRouterAddress,                                    // Target swap router contract address
+    value: "0x0",                                            // ETH value to send (0 for most operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 400000,                                        // Maximum gas to use (higher for multi-hop swaps)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 300,           // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
 ### 7. WPUSH Management
 Handle WPUSH deposits and withdrawals.
 
-**User Call (Deposit):**
+**UniversalPayload Generation (Deposit):**
 ```javascript
 // Encode WPUSH deposit call
+const wpush = new ethers.Contract(wpushAddress, wpushABI);
 const calldata = wpush.interface.encodeFunctionData('deposit');
 
-// Smart account forwards to WPUSH with ETH value
-await smartAccount.execute(wpush.address, calldata, { value: amount });
+const universalPayload = {
+    to: wpushAddress,                                         // Target WPUSH contract address
+    value: amount,                                           // ETH amount to deposit (in wei)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 100000,                                        // Maximum gas to use (lower for simple operations)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 3600,         // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
-**User Call (Withdraw):**
+**UniversalPayload Generation (Withdraw):**
 ```javascript
 // Encode WPUSH withdraw call
-const calldata = wpush.interface.encodeFunctionData('withdraw', [amount]);
+const calldata = wpush.interface.encodeFunctionData('withdraw', [
+    amount  // Amount of WPUSH to convert back to PC (in wei)
+]);
 
-// Smart account forwards to WPUSH
-await smartAccount.execute(wpush.address, calldata);
+const universalPayload = {
+    to: wpushAddress,                                         // Target WPUSH contract address
+    value: "0x0",                                            // ETH value to send (0 for withdraw operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 100000,                                        // Maximum gas to use (lower for simple operations)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 3600,         // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
 ### 8. Token Approvals
 Approve tokens for contracts.
 
-**User Call:**
+**UniversalPayload Generation:**
 ```javascript
 // Encode token.approve() call
+const token = new ethers.Contract(tokenAddress, erc20ABI);
 const calldata = token.interface.encodeFunctionData('approve', [
-    spenderAddress, 
-    amount
+    spenderAddress,  // Contract address to approve (e.g., swapRouter, positionManager)
+    amount           // Amount to approve (use MaxUint256 for unlimited approval)
 ]);
 
-// Smart account forwards to token
-await smartAccount.execute(token.address, calldata);
+const universalPayload = {
+    to: tokenAddress,                                         // Target token contract address
+    value: "0x0",                                            // ETH value to send (0 for token operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 100000,                                        // Maximum gas to use (lower for simple operations)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 3600,         // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
 ### 9. Token Transfers
 Transfer tokens.
 
-**User Call:**
+**UniversalPayload Generation:**
 ```javascript
 // Encode token.transfer() call
 const calldata = token.interface.encodeFunctionData('transfer', [
-    recipientAddress, 
-    amount
+    recipientAddress,  // Address to receive the tokens
+    amount            // Amount of tokens to transfer (in wei)
 ]);
 
-// Smart account forwards to token
-await smartAccount.execute(token.address, calldata);
+const universalPayload = {
+    to: tokenAddress,                                         // Target token contract address
+    value: "0x0",                                            // ETH value to send (0 for token operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 100000,                                        // Maximum gas to use (lower for simple operations)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 3600,         // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
 ```
 
-## 📦 Calldata Encoding Examples
+## 🔐 EIP-712 Payload Signing and Verification
 
-### JavaScript/TypeScript:
+### Step 1: Get UEA Domain Separator
 ```javascript
-// Example: Create pool
-const factory = new ethers.Contract(factoryAddress, factoryABI, signer);
-const calldata = factory.interface.encodeFunctionData('createPool', [
-    '0x...', // tokenA
-    '0x...', // tokenB
-    3000     // fee
-]);
+async function getUEADomainSeparator(ueaAddress, chainId) {
+    const domainSeparator = await ueaContract.domainSeparator();
+    return domainSeparator;
+}
+```
 
-// Example: Swap tokens
-const swapRouter = new ethers.Contract(swapRouterAddress, swapRouterABI, signer);
-const calldata = swapRouter.interface.encodeFunctionData('exactInputSingle', [{
-    tokenIn: '0x...',
-    tokenOut: '0x...',
-    fee: 3000,
+### Step 2: Generate Payload Hash
+```javascript
+async function generatePayloadHash(ueaAddress, universalPayload) {
+    // Get current nonce from UEA
+    const currentNonce = await ueaContract.nonce();
+    
+    // Update payload with current nonce
+    universalPayload.nonce = currentNonce;
+    
+    // Get domain separator
+    const domainSeparator = await ueaContract.domainSeparator();
+    
+    // Create struct hash
+    const structHash = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+            ['bytes32', 'address', 'uint256', 'bytes32', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint8'],
+            [
+                '0x1d8b43e5066bd20bfdacf7b8f4790c0309403b18434e3699ce3c5e57502ed8c4', // UNIVERSAL_PAYLOAD_TYPEHASH
+                universalPayload.to,
+                universalPayload.value,
+                ethers.utils.keccak256(universalPayload.data),
+                universalPayload.gasLimit,
+                universalPayload.maxFeePerGas,
+                universalPayload.maxPriorityFeePerGas,
+                universalPayload.nonce,
+                universalPayload.deadline,
+                universalPayload.vType
+            ]
+        )
+    );
+    
+    // Create final hash
+    const payloadHash = ethers.utils.keccak256(
+        ethers.utils.solidityPack(
+            ['string', 'bytes32', 'bytes32'],
+            ['\x19\x01', domainSeparator, structHash]
+        )
+    );
+    
+    return payloadHash;
+}
+```
+
+### Step 3: Sign Payload
+```javascript
+async function signUniversalPayload(ueaAddress, universalPayload, privateKey) {
+    const payloadHash = await generatePayloadHash(ueaAddress, universalPayload);
+    const signature = ethers.utils.signMessage(ethers.utils.arrayify(payloadHash), privateKey);
+    return signature;
+}
+```
+
+### Step 4: Execute on UEA_EVM
+```javascript
+async function executeUniversalPayload(ueaAddress, universalPayload, signature) {
+    const uea = new ethers.Contract(ueaAddress, ueaABI, pushChainSigner);
+    
+    await uea.executePayload(universalPayload, signature);
+}
+```
+
+## 📦 Complete Example: Swap WPUSH to pUSDC
+
+```javascript
+// 1. Generate swap UniversalPayload
+const swapRouter = new ethers.Contract(swapRouterAddress, swapRouterABI);
+const swapParams = {
+    tokenIn: wpushAddress,
+    tokenOut: pusdcAddress,
+    fee: 500,
     recipient: userAddress,
     deadline: Math.floor(Date.now() / 1000) + 300,
     amountIn: ethers.utils.parseEther('1'),
-    amountOutMinimum: ethers.utils.parseEther('0.99'),
+    amountOutMinimum: ethers.utils.parseUnits('1.9', 6),
     sqrtPriceLimitX96: 0
-}]);
+};
 
-// Example: WPUSH deposit
-const wpush = new ethers.Contract(wpushAddress, wpushABI, signer);
-const calldata = wpush.interface.encodeFunctionData('deposit');
+const calldata = swapRouter.interface.encodeFunctionData('exactInputSingle', [swapParams]);
+
+const universalPayload = {
+    to: swapRouterAddress,                                    // Target swap router contract address
+    value: "0x0",                                            // ETH value to send (0 for most operations)
+    data: calldata,                                          // Encoded function call data
+    gasLimit: 300000,                                        // Maximum gas to use (adjust based on operation complexity)
+    maxFeePerGas: ethers.utils.parseUnits("20", "gwei"),     // Maximum fee per gas unit (adjust based on network congestion)
+    maxPriorityFeePerGas: ethers.utils.parseUnits("2", "gwei"), // Maximum priority fee (adjust for faster inclusion)
+    nonce: 0,                                                // Will be set by UEA automatically
+    deadline: Math.floor(Date.now() / 1000) + 300,           // Unix timestamp after which payload expires
+    vType: 0                                                 // 0 for signedVerification, 1 for universalTxVerification
+};
+
+// 2. Sign UniversalPayload
+const signature = await signUniversalPayload(ueaAddress, universalPayload, userPrivateKey);
+
+// 3. Execute on UEA_EVM
+await executeUniversalPayload(ueaAddress, universalPayload, signature);
 ```
-
-## 🎯 Use Cases
-
-1. **DeFi Protocols**: Automated trading strategies
-2. **Cross-Chain Bridges**: Liquidity management
-3. **Yield Farming**: Position management
-4. **Arbitrage Bots**: Multi-hop swaps
-5. **Portfolio Management**: Automated rebalancing
-
-## 🔒 Security Considerations
-
-1. **Access Control**: Only owner can execute operations
-2. **Slippage Protection**: Always use amountOutMinimum
-3. **Deadline Checks**: Prevent stale transactions
-4. **Emergency Functions**: Allow token recovery
-5. **Input Validation**: Validate all parameters before encoding
-
-## 📊 Gas Optimization
-
-1. **Batch Operations**: Combine multiple operations in one transaction
-2. **Efficient Encoding**: Minimize calldata size
-3. **Reuse Contracts**: Cache contract instances
-4. **Optimized Approvals**: Use MaxUint256 for approvals
-
-## 🚀 Deployment
-
-### Deploy Smart Account:
-```javascript
-const SmartAccountFactory = await ethers.getContractFactory('UniswapSmartAccount');
-const smartAccount = await SmartAccountFactory.deploy(userAddress);
-await smartAccount.deployed();
-```
-
-### Usage:
-```javascript
-// User provides recipient address and calldata
-await smartAccount.execute(recipientAddress, calldata);
-```
-
-This architecture provides a simple and efficient way for smart accounts to interact with Uniswap V3 on Push Chain! 🚀
