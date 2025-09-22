@@ -7,9 +7,9 @@ async function deployAll() {
     console.log('├─ 1. Deploy pETH and pUSDC tokens');
     console.log('├─ 2. Create pETH/pUSDC pool');
     console.log('├─ 3. Add liquidity and test swap');
-    console.log('├─ 4. Create WPUSH/pUSDC pool');
+    console.log('├─ 4. Create WPC/pUSDC pool');
     console.log('├─ 5. Add liquidity and test swap');
-    console.log('├─ 6. Create pETH/WPUSH pool');
+    console.log('├─ 6. Create pETH/WPC pool');
     console.log('└─ 7. Add liquidity and test swap');
     console.log('');
 
@@ -42,55 +42,55 @@ async function deployAll() {
         await performSwap(pethUsdcPool, pUSDCAddress, pETHAddress, "4000");
         console.log('✅ pETH/pUSDC swap test successful!\n');
 
-        // Step 4: Create WPUSH/pUSDC pool
-        const wpushUsdcPriceRatio = 1000;
-        const wpushUsdcLiquidity0 = "1";
-        const wpushUsdcLiquidity1 = "1000";
-        console.log('🟢 STEP 4: Create WPUSH/pUSDC pool');
+        // Step 4: Create WPC/pUSDC pool
+        const WPCUsdcPriceRatio = 1000;
+        const WPCUsdcLiquidity0 = "1";
+        const WPCUsdcLiquidity1 = "1000";
+        console.log('🟢 STEP 4: Create WPC/pUSDC pool');
         console.log('-'.repeat(50));
-        const wpushAddress = "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818"; // Updated WPUSH deployment
-        const wpushUsdcPool = await createPool(
-            wpushAddress, pUSDCAddress, wpushUsdcPriceRatio, 3000, true, wpushUsdcLiquidity0, wpushUsdcLiquidity1
+        const WPCAddress = "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818"; // Updated WPC deployment
+        const WPCUsdcPool = await createPool(
+            WPCAddress, pUSDCAddress, WPCUsdcPriceRatio, 3000, true, WPCUsdcLiquidity0, WPCUsdcLiquidity1
         );
-        console.log('✅ WPUSH/pUSDC pool created and liquidity added!\n');
+        console.log('✅ WPC/pUSDC pool created and liquidity added!\n');
 
-        // Step 5: Test WPUSH/pUSDC swap
-        console.log('🟢 STEP 5: Test WPUSH/pUSDC swap');
+        // Step 5: Test WPC/pUSDC swap
+        console.log('🟢 STEP 5: Test WPC/pUSDC swap');
         console.log('-'.repeat(50));
-        await performSwap(wpushUsdcPool, pUSDCAddress, wpushAddress, "1000");
-        console.log('✅ WPUSH/pUSDC swap test successful!\n');
+        await performSwap(WPCUsdcPool, pUSDCAddress, WPCAddress, "1000");
+        console.log('✅ WPC/pUSDC swap test successful!\n');
 
-        // Step 6: Create pETH/WPUSH pool
+        // Step 6: Create pETH/WPC pool
         // Calculate the ratio from the other two pools
-        const pethWpushPriceRatio = pethUsdcPriceRatio / wpushUsdcPriceRatio;
-        const pethWpushLiquidity0 = "1";
-        const pethWpushLiquidity1 = "1";
-        console.log('🟢 STEP 6: Create pETH/WPUSH pool');
+        const pethWPCPriceRatio = pethUsdcPriceRatio / WPCUsdcPriceRatio;
+        const pethWPCLiquidity0 = "1";
+        const pethWPCLiquidity1 = "1";
+        console.log('🟢 STEP 6: Create pETH/WPC pool');
         console.log('-'.repeat(50));
-        const pethWpushPool = await createPool(
-            pETHAddress, wpushAddress, pethWpushPriceRatio, 3000, true, pethWpushLiquidity0, pethWpushLiquidity1
+        const pethWPCPool = await createPool(
+            pETHAddress, WPCAddress, pethWPCPriceRatio, 3000, true, pethWPCLiquidity0, pethWPCLiquidity1
         );
-        console.log('✅ pETH/WPUSH pool created and liquidity added!\n');
+        console.log('✅ pETH/WPC pool created and liquidity added!\n');
 
-        // Step 7: Test pETH/WPUSH swap
-        console.log('🟢 STEP 7: Test pETH/WPUSH swap');
+        // Step 7: Test pETH/WPC swap
+        console.log('🟢 STEP 7: Test pETH/WPC swap');
         console.log('-'.repeat(50));
-        await performSwap(pethWpushPool, wpushAddress, pETHAddress, "0.25");
-        console.log('✅ pETH/WPUSH swap test successful!\n');
+        await performSwap(pethWPCPool, WPCAddress, pETHAddress, "0.25");
+        console.log('✅ pETH/WPC swap test successful!\n');
 
         // Final summary
         console.log('🎉 DEPLOYMENT COMPLETE!');
         console.log('='.repeat(60));
         console.log('📊 Summary:');
         console.log('├─ pETH/pUSDC Pool:', pethUsdcPool);
-        console.log('├─ WPUSH/pUSDC Pool:', wpushUsdcPool);
-        console.log('├─ pETH/WPUSH Pool:', pethWpushPool);
+        console.log('├─ WPC/pUSDC Pool:', WPCUsdcPool);
+        console.log('├─ pETH/WPC Pool:', pethWPCPool);
         console.log('└─ All pools tested and working!');
         console.log('');
         console.log('💰 Price Relationships:');
         console.log(`├─ 1 pETH = ${pethUsdcPriceRatio} pUSDC`);
-        console.log(`├─ 1 WPUSH = ${wpushUsdcPriceRatio} pUSDC`);
-        console.log(`└─ 1 pETH = ${pethWpushPriceRatio} WPUSH`);
+        console.log(`├─ 1 WPC = ${WPCUsdcPriceRatio} pUSDC`);
+        console.log(`└─ 1 pETH = ${pethWPCPriceRatio} WPC`);
         console.log('');
         console.log('🚀 Your DEX is ready for trading!');
 

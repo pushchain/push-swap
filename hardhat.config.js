@@ -47,7 +47,7 @@ module.exports = {
             },
         ],
         overrides: {
-            'tests/contracts/WPUSH.sol': {
+            'tests/contracts/WPC.sol': {
                 version: '0.8.29',
                 settings: {
                     optimizer: {

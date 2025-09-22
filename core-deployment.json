@@ -1,7 +1,7 @@
 {
   "network": "unknown",
   "chainId": 42101,
-  "wpush": "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17",
+  "WPC": "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17",
   "factory": "0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5",
   "owner": "0xEbf0Cfc34E07ED03c05615394E2292b387B63F12",
   "deployer": "0xEbf0Cfc34E07ED03c05615394E2292b387B63F12",

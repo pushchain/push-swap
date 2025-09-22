@@ -4,15 +4,15 @@ const fs = require('fs');
 async function main() {
     console.log('🚀 Deploying Uniswap V3 Periphery...\n');
 
-    // Get Factory address from core deployment, use existing WPUSH
+    // Get Factory address from core deployment, use existing WPC
     let FACTORY_ADDRESS;
-    const WPUSH_ADDRESS = process.env.WPUSH_ADDRESS || "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17";
+    const WPC_ADDRESS = process.env.WPC_ADDRESS || "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17";
 
     try {
         const coreDeployment = JSON.parse(fs.readFileSync('../core-deployment.json', 'utf8'));
         FACTORY_ADDRESS = coreDeployment.factory;
         console.log('📋 Loaded Factory from core deployment:', FACTORY_ADDRESS);
-        console.log('💎 Using existing WPUSH contract:', WPUSH_ADDRESS);
+        console.log('💎 Using existing WPC contract:', WPC_ADDRESS);
     } catch (error) {
         console.error('❌ Could not load core deployment file!');
         console.log('💡 Make sure to run "npm run deploy-core" first');
@@ -28,7 +28,7 @@ async function main() {
     console.log('📋 Deploying with account:', deployer.address);
     console.log('💰 Account balance:', ethers.utils.formatEther(await deployer.getBalance()));
     console.log('🏭 Factory address:', FACTORY_ADDRESS);
-    console.log('💎 WPUSH address:', WPUSH_ADDRESS);
+    console.log('💎 WPC address:', WPC_ADDRESS);
 
     const deployments = {};
 
@@ -52,7 +52,7 @@ async function main() {
         }
     );
     const positionDescriptor = await NonfungibleTokenPositionDescriptor.deploy(
-        WPUSH_ADDRESS,
+        WPC_ADDRESS,
         ethers.utils.formatBytes32String('PUSH')
     );
     await positionDescriptor.deployed();
@@ -62,7 +62,7 @@ async function main() {
     // Step 3: Deploy SwapRouter
     console.log('\n📦 Step 3: Deploying SwapRouter...');
     const SwapRouter = await ethers.getContractFactory('SwapRouter', deployer);
-    const swapRouter = await SwapRouter.deploy(FACTORY_ADDRESS, WPUSH_ADDRESS);
+    const swapRouter = await SwapRouter.deploy(FACTORY_ADDRESS, WPC_ADDRESS);
     await swapRouter.deployed();
     deployments.swapRouter = swapRouter.address;
     console.log('✅ SwapRouter:', swapRouter.address);
@@ -72,7 +72,7 @@ async function main() {
     const NonfungiblePositionManager = await ethers.getContractFactory('NonfungiblePositionManager', deployer);
     const positionManager = await NonfungiblePositionManager.deploy(
         FACTORY_ADDRESS,
-        WPUSH_ADDRESS,
+        WPC_ADDRESS,
         positionDescriptor.address
     );
     await positionManager.deployed();
@@ -82,7 +82,7 @@ async function main() {
     // Step 5: Deploy QuoterV2
     console.log('\n📦 Step 5: Deploying QuoterV2...');
     const QuoterV2 = await ethers.getContractFactory('QuoterV2', deployer);
-    const quoterV2 = await QuoterV2.deploy(FACTORY_ADDRESS, WPUSH_ADDRESS);
+    const quoterV2 = await QuoterV2.deploy(FACTORY_ADDRESS, WPC_ADDRESS);
     await quoterV2.deployed();
     deployments.quoterV2 = quoterV2.address;
     console.log('✅ QuoterV2:', quoterV2.address);
@@ -108,7 +108,7 @@ async function main() {
     const V3Migrator = await ethers.getContractFactory('V3Migrator', deployer);
     const migrator = await V3Migrator.deploy(
         FACTORY_ADDRESS,
-        WPUSH_ADDRESS,
+        WPC_ADDRESS,
         positionManager.address
     );
     await migrator.deployed();
@@ -123,7 +123,7 @@ async function main() {
         timestamp: new Date().toISOString(),
         dependencies: {
             factory: FACTORY_ADDRESS,
-            wpush: WPUSH_ADDRESS
+            WPC: WPC_ADDRESS
         },
         contracts: deployments
     };
@@ -135,7 +135,7 @@ async function main() {
 
     console.log('\n📋 All Contract Addresses:');
     console.log('├─ Factory:', FACTORY_ADDRESS);
-    console.log('├─ WPUSH:', WPUSH_ADDRESS);
+    console.log('├─ WPC:', WPC_ADDRESS);
     Object.entries(deployments).forEach(([name, address]) => {
         console.log(`├─ ${name}: ${address}`);
     });
@@ -145,7 +145,7 @@ async function main() {
     console.log(`├─ SwapRouter: ${deployments.swapRouter}`);
     console.log(`├─ PositionManager: ${deployments.positionManager}`);
     console.log(`├─ QuoterV2: ${deployments.quoterV2}`);
-    console.log(`└─ WPUSH: ${WPUSH_ADDRESS}`);
+    console.log(`└─ WPC: ${WPC_ADDRESS}`);
 }
 
 main()

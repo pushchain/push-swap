@@ -39,9 +39,9 @@ All notable changes to the Uniswap V3 Push Chain fork are documented in this fil
 ### 🧪 Verification Results
 
 #### Price Accuracy
-- **pETH/WPUSH**: 1 pETH = 4.023 WPUSH (0.58% deviation from target 4.0)
+- **pETH/WPC**: 1 pETH = 4.023 WPC (0.58% deviation from target 4.0)
 - **pETH/pUSDC**: 1 pETH = 3964 pUSDC (0.89% deviation from target 4000)
-- **WPUSH/pUSDC**: 1 WPUSH = 988 pUSDC (1.17% deviation from target 1000)
+- **WPC/pUSDC**: 1 WPC = 988 pUSDC (1.17% deviation from target 1000)
 
 #### Mathematical Consistency
 - **Cross-pool verification**: 3964/4.023 ≈ 985 vs actual 988 (0.32% difference)
@@ -57,7 +57,7 @@ All notable changes to the Uniswap V3 Push Chain fork are documented in this fil
 
 #### Price Calculation Engine
 ```javascript
-// Same decimals (e.g., pETH/WPUSH both 18)
+// Same decimals (e.g., pETH/WPC both 18)
 if (priceRatio === 4) return Q96.mul(2); // sqrt(4) = 2
 
 // Different decimals (e.g., pETH 18, pUSDC 6)

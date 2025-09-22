@@ -2,11 +2,11 @@
 
 const { ethers } = require('hardhat');
 
-// This script is for deploying a NEW WPUSH contract
-// Use this when you want to deploy your own WPUSH for production
-// For testing, we use the existing WPUSH contract
-async function deployWPUSH() {
-    console.log('🚀 Deploying NEW WPUSH Contract...\n');
+// This script is for deploying a NEW WPC contract
+// Use this when you want to deploy your own WPC for production
+// For testing, we use the existing WPC contract
+async function deployWPC() {
+    console.log('🚀 Deploying NEW WPC Contract...\n');
 
     // Use private key from .env instead of default account
     require('dotenv').config();
@@ -17,53 +17,53 @@ async function deployWPUSH() {
     console.log('💰 Account balance:', ethers.utils.formatEther(await deployer.getBalance()));
 
     try {
-        // Deploy WPUSH
-        console.log('\n📦 Deploying WPUSH...');
-        const WPUSHFactory = await ethers.getContractFactory('WPUSH', deployer);
-        const wpush = await WPUSHFactory.deploy();
+        // Deploy WPC
+        console.log('\n📦 Deploying WPC...');
+        const WPCFactory = await ethers.getContractFactory('WPC', deployer);
+        const WPC = await WPCFactory.deploy();
 
         console.log('⏳ Waiting for deployment...');
-        await wpush.deployed();
+        await WPC.deployed();
 
-        console.log('✅ WPUSH deployed:', wpush.address);
-        console.log('🔗 Transaction hash:', wpush.deployTransaction.hash);
+        console.log('✅ WPC deployed:', WPC.address);
+        console.log('🔗 Transaction hash:', WPC.deployTransaction.hash);
 
         // Test basic functionality
-        console.log('\n🧪 Testing WPUSH functionality...');
-        console.log('├─ Name:', await wpush.name());
-        console.log('├─ Symbol:', await wpush.symbol());
-        console.log('├─ Decimals:', await wpush.decimals());
-        console.log('├─ Total Supply:', ethers.utils.formatEther(await wpush.totalSupply()));
+        console.log('\n🧪 Testing WPC functionality...');
+        console.log('├─ Name:', await WPC.name());
+        console.log('├─ Symbol:', await WPC.symbol());
+        console.log('├─ Decimals:', await WPC.decimals());
+        console.log('├─ Total Supply:', ethers.utils.formatEther(await WPC.totalSupply()));
 
         // Test deposit
         console.log('├─ Testing deposit of 1 PUSH...');
-        const depositTx = await wpush.deposit({ value: ethers.utils.parseEther('1') });
+        const depositTx = await WPC.deposit({ value: ethers.utils.parseEther('1') });
         await depositTx.wait();
 
-        const balance = await wpush.balanceOf(deployer.address);
-        console.log('├─ WPUSH balance after deposit:', ethers.utils.formatEther(balance));
+        const balance = await WPC.balanceOf(deployer.address);
+        console.log('├─ WPC balance after deposit:', ethers.utils.formatEther(balance));
         console.log('└─ Deposit test successful ✅');
 
         console.log('\n📋 Deployment Summary:');
-        console.log('├─ WPUSH Address:', wpush.address);
+        console.log('├─ WPC Address:', WPC.address);
         console.log('├─ Deployer:', deployer.address);
         console.log('├─ Network: Push Chain');
         console.log('└─ Status: Ready for use ✅');
 
         console.log('\n💡 Next steps:');
-        console.log('├─ Update your .env file with: WPUSH_ADDRESS=' + wpush.address);
-        console.log('├─ Update tests/config.js with the new WPUSH address');
-        console.log('└─ Use this WPUSH in your Uniswap V3 deployment');
+        console.log('├─ Update your .env file with: WPC_ADDRESS=' + WPC.address);
+        console.log('├─ Update tests/config.js with the new WPC address');
+        console.log('└─ Use this WPC in your Uniswap V3 deployment');
 
     } catch (error) {
-        console.log('❌ WPUSH deployment failed:', error.message);
+        console.log('❌ WPC deployment failed:', error.message);
         process.exit(1);
     }
 }
 
 // Run deployment if called directly
 if (require.main === module) {
-    deployWPUSH()
+    deployWPC()
         .then(() => process.exit(0))
         .catch((error) => {
             console.error(error);
@@ -71,4 +71,4 @@ if (require.main === module) {
         });
 }
 
-module.exports = deployWPUSH; 
+module.exports = deployWPC; 

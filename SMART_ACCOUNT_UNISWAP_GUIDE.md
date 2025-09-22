@@ -221,17 +221,17 @@ const universalPayload = {
 };
 ```
 
-### 7. WPUSH Management
-Handle WPUSH deposits and withdrawals.
+### 7. WPC Management
+Handle WPC deposits and withdrawals.
 
 **UniversalPayload Generation (Deposit):**
 ```javascript
-// Encode WPUSH deposit call
-const wpush = new ethers.Contract(wpushAddress, wpushABI);
-const calldata = wpush.interface.encodeFunctionData('deposit');
+// Encode WPC deposit call
+const WPC = new ethers.Contract(WPCAddress, WPCABI);
+const calldata = WPC.interface.encodeFunctionData('deposit');
 
 const universalPayload = {
-    to: wpushAddress,                                         // Target WPUSH contract address
+    to: WPCAddress,                                         // Target WPC contract address
     value: amount,                                           // ETH amount to deposit (in wei)
     data: calldata,                                          // Encoded function call data
     gasLimit: 100000,                                        // Maximum gas to use (lower for simple operations)
@@ -245,13 +245,13 @@ const universalPayload = {
 
 **UniversalPayload Generation (Withdraw):**
 ```javascript
-// Encode WPUSH withdraw call
-const calldata = wpush.interface.encodeFunctionData('withdraw', [
-    amount  // Amount of WPUSH to convert back to PC (in wei)
+// Encode WPC withdraw call
+const calldata = WPC.interface.encodeFunctionData('withdraw', [
+    amount  // Amount of WPC to convert back to PC (in wei)
 ]);
 
 const universalPayload = {
-    to: wpushAddress,                                         // Target WPUSH contract address
+    to: WPCAddress,                                         // Target WPC contract address
     value: "0x0",                                            // ETH value to send (0 for withdraw operations)
     data: calldata,                                          // Encoded function call data
     gasLimit: 100000,                                        // Maximum gas to use (lower for simple operations)
@@ -383,13 +383,13 @@ async function executeUniversalPayload(ueaAddress, universalPayload, signature) 
 }
 ```
 
-## 📦 Complete Example: Swap WPUSH to pUSDC
+## 📦 Complete Example: Swap WPC to pUSDC
 
 ```javascript
 // 1. Generate swap UniversalPayload
 const swapRouter = new ethers.Contract(swapRouterAddress, swapRouterABI);
 const swapParams = {
-    tokenIn: wpushAddress,
+    tokenIn: WPCAddress,
     tokenOut: pusdcAddress,
     fee: 500,
     recipient: userAddress,

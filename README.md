@@ -9,7 +9,7 @@ push-swap/
 ├── scripts/
 │   ├── pool-manager.js              # Main operations script
 │   ├── deploy-all.js                # Complete DEX deployment
-│   ├── deploy-wpush.js              # WPUSH token deployment
+│   ├── deploy-WPC.js              # WPC token deployment
 │   └── core/
 │       └── config.js                # Configuration and utilities
 ├── test-addresses.json              # Deployed contract addresses
@@ -37,20 +37,20 @@ npm run deploy-dex
 ```
 
 Creates a 3-pool DEX with:
-- pETH (18 decimals), pUSDC (6 decimals), WPUSH (18 decimals)
+- pETH (18 decimals), pUSDC (6 decimals), WPC (18 decimals)
 - Pool 1: 1 pETH = 4000 pUSDC
-- Pool 2: 1 WPUSH = 1000 pUSDC  
-- Pool 3: 1 pETH = 4 WPUSH
+- Pool 2: 1 WPC = 1000 pUSDC  
+- Pool 3: 1 pETH = 4 WPC
 
 ### Individual Operations
 
-**Get WPUSH Tokens:**
+**Get WPC Tokens:**
 ```bash
-# Get 1 WPUSH (default)
-node scripts/pool-manager.js get-wpush
+# Get 1 WPC (default)
+node scripts/pool-manager.js get-WPC
 
-# Get specific amount (e.g., 10 WPUSH)
-node scripts/pool-manager.js get-wpush 10
+# Get specific amount (e.g., 10 WPC)
+node scripts/pool-manager.js get-WPC 10
 ```
 
 **Deploy Tokens:**
@@ -65,17 +65,17 @@ node scripts/pool-manager.js deploy-tokens pUSDC "Push USDC" 6 10000000
 
 **Create Pool:**
 ```bash
-node scripts/pool-manager.js create-pool [pETH_addr] [WPUSH_addr] 4 3000 true 1 4
+node scripts/pool-manager.js create-pool [pETH_addr] [WPC_addr] 4 3000 true 1 4
 ```
 
 **Add Liquidity:**
 ```bash
-node scripts/pool-manager.js add-liquidity [pool_addr] [pETH_addr] [WPUSH_addr] 1 4  
+node scripts/pool-manager.js add-liquidity [pool_addr] [pETH_addr] [WPC_addr] 1 4  
 ```
 
 **Perform Swap:**
 ```bash
-node scripts/pool-manager.js swap [pool_addr] [pETH_addr] [WPUSH_addr] 1
+node scripts/pool-manager.js swap [pool_addr] [pETH_addr] [WPC_addr] 1
 ```
 
 ## Available Scripts
@@ -131,12 +131,12 @@ Deployed addresses are saved to `test-addresses.json`:
   "tokens": {
     "pETH": "0x...",
     "pUSDC": "0x...", 
-    "WPUSH": "0x..."
+    "WPC": "0x..."
   },
   "pools": {
-    "pETH_WPUSH": "0x...",
+    "pETH_WPC": "0x...",
     "pETH_pUSDC": "0x...",
-    "WPUSH_pUSDC": "0x..."
+    "WPC_pUSDC": "0x..."
   },
   "contracts": {
     "factory": "0x...",

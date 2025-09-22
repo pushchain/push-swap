@@ -12,9 +12,9 @@ async function main() {
     console.log('📋 Deploying with account:', deployer.address);
     console.log('💰 Account balance:', ethers.utils.formatEther(await deployer.getBalance()));
 
-    // Use existing WPUSH deployment
-    const WPUSH_ADDRESS = process.env.WPUSH_ADDRESS || "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17";
-    console.log('\n💎 Using existing WPUSH contract:', WPUSH_ADDRESS);
+    // Use existing WPC deployment
+    const WPC_ADDRESS = process.env.WPC_ADDRESS || "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17";
+    console.log('\n💎 Using existing WPC contract:', WPC_ADDRESS);
 
     // Deploy UniswapV3Factory
     console.log('\n📦 Deploying UniswapV3Factory...');
@@ -44,7 +44,7 @@ async function main() {
     const deployment = {
         network: (await ethers.provider.getNetwork()).name,
         chainId: (await ethers.provider.getNetwork()).chainId,
-        wpush: WPUSH_ADDRESS,
+        WPC: WPC_ADDRESS,
         factory: factory.address,
         owner: await factory.owner(),
         deployer: deployer.address,

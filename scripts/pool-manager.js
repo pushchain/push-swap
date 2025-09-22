@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const BN = require('bignumber.js');
 
-// Import WPUSH management function
-const { ensureWPUSH } = require('./core/config');
+// Import WPC management function
+const { ensureWPC } = require('./core/config');
 
 // Precise sqrt price calculation using bignumber.js to match Uniswap's encodePriceSqrt
 function calculateSqrtPriceX96Precise(priceRatio, token0Decimals, token1Decimals) {
@@ -361,13 +361,13 @@ async function addLiquidityToPool(poolAddress, inputToken0Address, inputToken1Ad
         const signer = config.getSigner();
         const positionManager = config.getContract('positionManager');
 
-        // Check if we need WPUSH for this liquidity addition
-        const wpushAddress = config.CONTRACTS.wpush;
-        if (inputToken0Address.toLowerCase() === wpushAddress.toLowerCase()) {
-            await ensureWPUSH(inputAmount0);
+        // Check if we need WPC for this liquidity addition
+        const WPCAddress = config.CONTRACTS.WPC;
+        if (inputToken0Address.toLowerCase() === WPCAddress.toLowerCase()) {
+            await ensureWPC(inputAmount0);
         }
-        if (inputToken1Address.toLowerCase() === wpushAddress.toLowerCase()) {
-            await ensureWPUSH(inputAmount1);
+        if (inputToken1Address.toLowerCase() === WPCAddress.toLowerCase()) {
+            await ensureWPC(inputAmount1);
         }
 
         // Get input token contracts
@@ -506,10 +506,10 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
         const signer = config.getSigner();
         const swapRouter = config.getContract('swapRouter');
 
-        // Check if we need WPUSH for this swap (if tokenIn is WPUSH)
-        const wpushAddress = config.CONTRACTS.wpush;
-        if (tokenInAddress.toLowerCase() === wpushAddress.toLowerCase()) {
-            await ensureWPUSH(amountIn);
+        // Check if we need WPC for this swap (if tokenIn is WPC)
+        const WPCAddress = config.CONTRACTS.WPC;
+        if (tokenInAddress.toLowerCase() === WPCAddress.toLowerCase()) {
+            await ensureWPC(amountIn);
         }
 
         // Get token contracts
@@ -716,9 +716,9 @@ async function addFullRangeLiquidity(poolAddress, token0Address, token1Address, 
     }
 }
 
-// Get WPUSH tokens by depositing PUSH
-async function getWPUSH(amount = '1') {
-    console.log('=== WPUSH Token Getter ===');
+// Get WPC tokens by depositing PUSH
+async function getWPC(amount = '1') {
+    console.log('=== WPC Token Getter ===');
 
     const signer = config.getSigner();
     const userAddress = await signer.getAddress();
@@ -727,15 +727,15 @@ async function getWPUSH(amount = '1') {
 
     // Get current balances
     const pcBalance = await signer.getBalance();
-    const wpushContract = config.getContract('wpush');
-    const wpushBalance = await wpushContract.balanceOf(userAddress);
+    const WPCContract = config.getContract('WPC');
+    const WPCBalance = await WPCContract.balanceOf(userAddress);
 
     console.log(`├─ Current PUSH Balance: ${config.formatToken(pcBalance, 18)}`);
-    console.log(`├─ Current WPUSH Balance: ${config.formatToken(wpushBalance, 18)}`);
+    console.log(`├─ Current WPC Balance: ${config.formatToken(WPCBalance, 18)}`);
 
     const amountParsed = config.parseToken(amount, 18);
 
-    console.log(`├─ Requesting ${amount} WPUSH...`);
+    console.log(`├─ Requesting ${amount} WPC...`);
 
     // Check if we have enough PUSH
     if (pcBalance.lt(amountParsed)) {
@@ -743,21 +743,21 @@ async function getWPUSH(amount = '1') {
         return;
     }
 
-    // Deposit PUSH to get WPUSH
-    console.log(`├─ Depositing ${amount} PUSH to get WPUSH...`);
+    // Deposit PUSH to get WPC
+    console.log(`├─ Depositing ${amount} PUSH to get WPC...`);
 
     try {
-        const depositTx = await wpushContract.deposit({ value: amountParsed });
+        const depositTx = await WPCContract.deposit({ value: amountParsed });
         console.log(`├─ Transaction hash: ${depositTx.hash}`);
 
         await depositTx.wait();
         console.log(`├─ ✅ Transaction confirmed!`);
 
         // Check new balance
-        const newWpushBalance = await wpushContract.balanceOf(userAddress);
-        console.log(`├─ New WPUSH Balance: ${config.formatToken(newWpushBalance, 18)}`);
+        const newWPCBalance = await WPCContract.balanceOf(userAddress);
+        console.log(`├─ New WPC Balance: ${config.formatToken(newWPCBalance, 18)}`);
 
-        console.log(`└─ ✅ Successfully got ${amount} WPUSH!`);
+        console.log(`└─ ✅ Successfully got ${amount} WPC!`);
 
     } catch (error) {
         console.log(`├─ ❌ Error: ${error.message}`);
@@ -811,10 +811,10 @@ async function main() {
                 await addFullRangeLiquidity(poolAddr2, tok0Addr2, tok1Addr2, amount0_2, amount1_2);
                 break;
 
-            case 'get-wpush':
-                // node pool-manager.js get-wpush [amount]
-                const wpushAmount = args[1] || '1';
-                await getWPUSH(wpushAmount);
+            case 'get-WPC':
+                // node pool-manager.js get-WPC [amount]
+                const WPCAmount = args[1] || '1';
+                await getWPC(WPCAmount);
                 break;
 
             default:
@@ -823,7 +823,7 @@ async function main() {
                 console.log('  create-pool <token0Address> <token1Address> <priceRatio> [fee] [addLiquidity] [amount0] [amount1]');
                 console.log('  add-liquidity <poolAddress> <token0Address> <token1Address> <amount0> <amount1>');
                 console.log('  swap <poolAddress> <tokenInAddress> <tokenOutAddress> <amountIn>');
-                console.log('  get-wpush [amount] - Get WPUSH tokens by depositing PUSH');
+                console.log('  get-WPC [amount] - Get WPC tokens by depositing PUSH');
         }
     } catch (error) {
         console.error('💥 Operation failed:', error);

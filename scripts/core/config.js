@@ -1,9 +1,9 @@
 const { ethers } = require('ethers');
 
-// Contract addresses from deployment (using existing WPUSH)
+// Contract addresses from deployment (using existing WPC)
 const CONTRACTS = {
     factory: '0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5',
-    wpush: '0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818', // Updated WPUSH deployment
+    WPC: '0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818', // Updated WPC deployment
     swapRouter: '0x34B10a283c2331Afa2C7a6bb5FB961E01f218fa0',
     positionManager: '0xf90F08fD301190Cd34CC9eFc5A76351e95051670',
     quoterV2: '0x4e8152fB4C72De9f187Cc93E85135283517B2fbB',
@@ -21,7 +21,7 @@ const ABIS = {
         'event PoolCreated(address indexed token0, address indexed token1, uint24 indexed fee, int24 tickSpacing, address pool)'
     ],
 
-    wpush: [
+    WPC: [
         'function name() view returns (string)',
         'function symbol() view returns (string)',
         'function decimals() view returns (uint8)',
@@ -154,21 +154,21 @@ function sortTokens(tokenA, tokenB) {
     return tokenA.toLowerCase() < tokenB.toLowerCase() ? [tokenA, tokenB] : [tokenB, tokenA];
 }
 
-// Simple WPUSH balance check and deposit
-async function ensureWPUSH(amount) {
+// Simple WPC balance check and deposit
+async function ensureWPC(amount) {
     const signer = getSigner();
-    const wpushContract = getContract('wpush');
+    const WPCContract = getContract('WPC');
 
-    const currentBalance = await wpushContract.balanceOf(signer.address);
+    const currentBalance = await WPCContract.balanceOf(signer.address);
     const amountParsed = parseToken(amount, 18);
 
     if (currentBalance.lt(amountParsed)) {
         const needed = amountParsed.sub(currentBalance);
-        console.log(`├─ WPUSH balance low, depositing ${formatToken(needed, 18)} PUSH...`);
+        console.log(`├─ WPC balance low, depositing ${formatToken(needed, 18)} PUSH...`);
 
-        const depositTx = await wpushContract.deposit({ value: needed });
+        const depositTx = await WPCContract.deposit({ value: needed });
         await depositTx.wait();
-        console.log(`├─ ✅ WPUSH balance updated`);
+        console.log(`├─ ✅ WPC balance updated`);
     }
 }
 
@@ -182,5 +182,5 @@ module.exports = {
     formatToken,
     parseToken,
     sortTokens,
-    ensureWPUSH
+    ensureWPC
 }; 

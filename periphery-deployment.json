@@ -5,7 +5,7 @@
   "timestamp": "2025-08-25T19:15:24.415Z",
   "dependencies": {
     "factory": "0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5",
-    "wpush": "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17"
+    "WPC": "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17"
   },
   "contracts": {
     "nftDescriptor": "0x4cBD1E2E6f44C0e406F5FfC9bb5312a281610E94",

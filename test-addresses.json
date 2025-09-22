@@ -9,7 +9,7 @@
   },
   "contracts": {
     "factory": "0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5",
-    "wpush": "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818",
+    "WPC": "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818",
     "swapRouter": "0x34B10a283c2331Afa2C7a6bb5FB961E01f218fa0",
     "positionManager": "0xf90F08fD301190Cd34CC9eFc5A76351e95051670",
     "quoterV2": "0x4e8152fB4C72De9f187Cc93E85135283517B2fbB",
@@ -25,19 +25,19 @@
       "totalSupply": "10000000"
     }
   },
-    "WPUSH_pUSDC_500": {
-      "name": "WPUSH/pUSDC Pool",
-      "address": "0xdd48D507908F9ebffbe28D6FbE28a167aA449841",
-      "token0": "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818",
-      "token1": "0xBeEcDAf9aE39d6c71c29F0344346F6B4C500BB4F",
-      "token0Symbol": "WPUSH",
-      "token1Symbol": "pUSDC",
-      "fee": 500,
-      "feePercentage": "0.05%",
-      "priceRatio": 2,
-      "sqrtPriceX96": "112045541949572279837463",
-      "currentTick": "-269393",
-      "targetPricing": "1 WPUSH = 2 pUSDC",
-      "createdAt": "2025-08-27T12:01:58.816Z"
-    }
+  "WPC_pUSDC_500": {
+    "name": "WPC/pUSDC Pool",
+    "address": "0xdd48D507908F9ebffbe28D6FbE28a167aA449841",
+    "token0": "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818",
+    "token1": "0xBeEcDAf9aE39d6c71c29F0344346F6B4C500BB4F",
+    "token0Symbol": "WPC",
+    "token1Symbol": "pUSDC",
+    "fee": 500,
+    "feePercentage": "0.05%",
+    "priceRatio": 2,
+    "sqrtPriceX96": "112045541949572279837463",
+    "currentTick": "-269393",
+    "targetPricing": "1 WPC = 2 pUSDC",
+    "createdAt": "2025-08-27T12:01:58.816Z"
   }
+}
