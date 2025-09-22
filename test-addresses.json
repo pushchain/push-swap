@@ -16,22 +16,6 @@
     "tickLens": "0x83D3B8bAe05C36b5404c1e284D306a6a1351Ef60",
     "multicall": "0x0b19E6e4dA71Be4F12db104373340d8fFc49880A"
   },
-  "testTokens": {
-    "pUSDC": {
-      "name": "Push USDC",
-      "symbol": "pUSDC",
-      "address": "0xDAfEd6d37661dFd7A233C77006d3562E44b0A1A7",
-      "decimals": 6,
-      "totalSupply": "10000000"
-    },
-    "pETH": {
-      "name": "Push ETH",
-      "symbol": "pETH",
-      "address": "0x34CafcCD8f364b02F08b3E00E7b065a4D505a18f",
-      "decimals": 18,
-      "totalSupply": "1000000"
-    }
-  },
   "pools": {
     "pETH_pUSDC_3000": {
       "name": "pETH/pUSDC Pool",
