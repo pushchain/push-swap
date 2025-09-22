@@ -104,6 +104,7 @@ deployments/
 !test-addresses.json
 !core-deployment.json
 !periphery-deployment.json
+!official-prc20.json
 
 # Lock files (you may want to include these in some projects)
 package-lock.json
