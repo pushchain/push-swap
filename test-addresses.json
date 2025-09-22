@@ -17,21 +17,6 @@
     "multicall": "0x0b19E6e4dA71Be4F12db104373340d8fFc49880A"
   },
   "pools": {
-    "pETH_pUSDC_3000": {
-      "name": "pETH/pUSDC Pool",
-      "address": "0x1759875802F126EfeA3054EAa604C57F8Bf3E8f5",
-      "token0": "0x34CafcCD8f364b02F08b3E00E7b065a4D505a18f",
-      "token1": "0xDAfEd6d37661dFd7A233C77006d3562E44b0A1A7",
-      "token0Symbol": "pETH",
-      "token1Symbol": "pUSDC",
-      "fee": 3000,
-      "feePercentage": "0.30%",
-      "priceRatio": 0.25,
-      "sqrtPriceX96": "39614081257132168796771",
-      "currentTick": "-290188",
-      "targetPricing": "1 pETH = 4 pUSDC",
-      "createdAt": "2025-09-22T12:10:27.657Z"
-    },
     "pSOL_WPC_500": {
       "name": "pSOL/WPC Pool",
       "address": "0x0E5914e3A7e2e6d18330Dd33fA387Ce33Da48b54",
