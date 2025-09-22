@@ -8,13 +8,13 @@
     "rpcUrl": "https://evm.rpc-testnet-donut-node1.push.org"
   },
   "contracts": {
-    "factory": "0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5",
-    "WPC": "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818",
-    "swapRouter": "0x34B10a283c2331Afa2C7a6bb5FB961E01f218fa0",
-    "positionManager": "0xf90F08fD301190Cd34CC9eFc5A76351e95051670",
-    "quoterV2": "0x4e8152fB4C72De9f187Cc93E85135283517B2fbB",
-    "tickLens": "0x83D3B8bAe05C36b5404c1e284D306a6a1351Ef60",
-    "multicall": "0x0b19E6e4dA71Be4F12db104373340d8fFc49880A"
+    "factory": "0x81b8Bca02580C7d6b636051FDb7baAC436bFb454",
+    "WPC": "0xE17DD2E0509f99E9ee9469Cf6634048Ec5a3ADe9",
+    "swapRouter": "0x5D548bB9E305AAe0d6dc6e6fdc3ab419f6aC0037",
+    "positionManager": "0xf9b3ac66aed14A2C7D9AA7696841aB6B27a6231e",
+    "quoterV2": "0x83316275f7C2F79BC4E26f089333e88E89093037",
+    "tickLens": "0xb64113Fc16055AfE606f25658812EE245Aa41dDC",
+    "multicall": "0xa8c00017955c8654bfFbb6d5179c99f5aB8B7849"
   },
   "pools": {
     "pSOL_WPC_500": {
@@ -29,7 +29,7 @@
       "priceRatio": 2300,
       "sqrtPriceX96": "120155457601348120190674128169310594",
       "currentTick": "284653",
-      "targetPricing": "1 pSOL = 0.0004347826086956522 WPC",
+      "targetPricing": "1 pSOL = 2300 WPC",
       "createdAt": "2025-09-22T14:32:03.085Z"
     },
     "pETH_WPC_500": {
@@ -44,7 +44,7 @@
       "priceRatio": 40000,
       "sqrtPriceX96": "15845632502852867518708790067200",
       "currentTick": "105971",
-      "targetPricing": "1 pETH = 0.000025 WPC",
+      "targetPricing": "1 pETH = 40000 WPC",
       "createdAt": "2025-09-22T14:34:24.725Z"
     }
   }
