@@ -20,24 +20,33 @@
     "pUSDC": {
       "name": "Push USDC",
       "symbol": "pUSDC",
-      "address": "0xBeEcDAf9aE39d6c71c29F0344346F6B4C500BB4F",
+      "address": "0xDAfEd6d37661dFd7A233C77006d3562E44b0A1A7",
       "decimals": 6,
       "totalSupply": "10000000"
+    },
+    "pETH": {
+      "name": "Push ETH",
+      "symbol": "pETH",
+      "address": "0x34CafcCD8f364b02F08b3E00E7b065a4D505a18f",
+      "decimals": 18,
+      "totalSupply": "1000000"
     }
   },
-  "WPC_pUSDC_500": {
-    "name": "WPC/pUSDC Pool",
-    "address": "0xdd48D507908F9ebffbe28D6FbE28a167aA449841",
-    "token0": "0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818",
-    "token1": "0xBeEcDAf9aE39d6c71c29F0344346F6B4C500BB4F",
-    "token0Symbol": "WPC",
-    "token1Symbol": "pUSDC",
-    "fee": 500,
-    "feePercentage": "0.05%",
-    "priceRatio": 2,
-    "sqrtPriceX96": "112045541949572279837463",
-    "currentTick": "-269393",
-    "targetPricing": "1 WPC = 2 pUSDC",
-    "createdAt": "2025-08-27T12:01:58.816Z"
+  "pools": {
+    "pETH_pUSDC_3000": {
+      "name": "pETH/pUSDC Pool",
+      "address": "0x1759875802F126EfeA3054EAa604C57F8Bf3E8f5",
+      "token0": "0x34CafcCD8f364b02F08b3E00E7b065a4D505a18f",
+      "token1": "0xDAfEd6d37661dFd7A233C77006d3562E44b0A1A7",
+      "token0Symbol": "pETH",
+      "token1Symbol": "pUSDC",
+      "fee": 3000,
+      "feePercentage": "0.30%",
+      "priceRatio": 0.25,
+      "sqrtPriceX96": "39614081257132168796771",
+      "currentTick": "-290188",
+      "targetPricing": "1 pETH = 4 pUSDC",
+      "createdAt": "2025-09-22T12:10:27.657Z"
+    }
   }
 }

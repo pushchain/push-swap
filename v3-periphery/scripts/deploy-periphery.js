@@ -6,10 +6,26 @@ async function main() {
 
     // Get Factory address from core deployment, use existing WPC
     let FACTORY_ADDRESS;
-    const WPC_ADDRESS = process.env.WPC_ADDRESS || "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17";
+    // Load WPC address from test-addresses.json
+    let WPC_ADDRESS;
+    try {
+        const testAddressesPath = path.join(__dirname, '../../test-addresses.json');
+        if (fs.existsSync(testAddressesPath)) {
+            const testAddresses = JSON.parse(fs.readFileSync(testAddressesPath, 'utf8'));
+            WPC_ADDRESS = testAddresses.contracts?.WPC;
+        }
+    } catch (error) {
+        console.warn('Could not load WPC from test-addresses.json:', error.message);
+    }
+
+    if (!WPC_ADDRESS) {
+        console.error('❌ WPC address not found in test-addresses.json');
+        console.log('💡 Please deploy WPC first using: npm run deploy-wpush');
+        process.exit(1);
+    }
 
     try {
-        const coreDeployment = JSON.parse(fs.readFileSync('../core-deployment.json', 'utf8'));
+        const coreDeployment = JSON.parse(fs.readFileSync('../v3-core/core-deployment.json', 'utf8'));
         FACTORY_ADDRESS = coreDeployment.factory;
         console.log('📋 Loaded Factory from core deployment:', FACTORY_ADDRESS);
         console.log('💎 Using existing WPC contract:', WPC_ADDRESS);

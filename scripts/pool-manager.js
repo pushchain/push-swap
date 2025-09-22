@@ -111,6 +111,13 @@ async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supp
 
         console.log(`├─ ${token1Symbol} deployed:`, token1.address);
 
+        // Deposit tokens to deployer
+        console.log(`├─ Depositing ${token1Supply} ${token1Symbol} to deployer...`);
+        const token1MintAmount = ethers.utils.parseUnits(token1Supply.toString(), token1Decimals);
+        const token1MintTx = await token1.deposit(signer.address, token1MintAmount);
+        await token1MintTx.wait();
+        console.log(`├─ ✅ Deposited ${token1Supply} ${token1Symbol}`);
+
         // Add token2 to deployedTokens if it exists
         if (token2) {
             deployedTokens[token2Symbol] = {
@@ -121,9 +128,16 @@ async function deployTokens(token1Symbol, token1Name, token1Decimals, token1Supp
                 decimals: token2Decimals
             };
             console.log(`├─ ${token2Symbol} deployed:`, token2.address);
+
+            // Deposit tokens to deployer
+            console.log(`├─ Depositing ${token2Supply} ${token2Symbol} to deployer...`);
+            const token2MintAmount = ethers.utils.parseUnits(token2Supply.toString(), token2Decimals);
+            const token2MintTx = await token2.deposit(signer.address, token2MintAmount);
+            await token2MintTx.wait();
+            console.log(`├─ ✅ Deposited ${token2Supply} ${token2Symbol}`);
         }
 
-        console.log('└─ ✅ Tokens deployed successfully!');
+        console.log('└─ ✅ Tokens deployed and minted successfully!');
 
         // Save addresses with proper structure
         const addressesPath = path.join(__dirname, '..', 'test-addresses.json');
@@ -307,6 +321,9 @@ async function createPool(token0Address, token1Address, priceRatio, fee = 3000, 
                 pools: {}
             };
         }
+
+        // Ensure pools object exists
+        addressesData.pools = addressesData.pools || {};
 
         // Get token symbols for readable pool key
         const token0ContractForSymbol = new ethers.Contract(token0, config.ABIS.prc20, signer);

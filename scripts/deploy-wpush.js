@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 const { ethers } = require('hardhat');
+const fs = require('fs');
+const path = require('path');
 
 // This script is for deploying a NEW WPC contract
 // Use this when you want to deploy your own WPC for production
@@ -44,6 +46,31 @@ async function deployWPC() {
         console.log('├─ WPC balance after deposit:', ethers.utils.formatEther(balance));
         console.log('└─ Deposit test successful ✅');
 
+        // Save WPC address to test-addresses.json
+        const addressesPath = path.join(__dirname, '..', 'test-addresses.json');
+        let addressesData = {};
+
+        try {
+            if (fs.existsSync(addressesPath)) {
+                addressesData = JSON.parse(fs.readFileSync(addressesPath, 'utf8'));
+            }
+        } catch (error) {
+            console.warn('Could not read existing test-addresses.json:', error.message);
+        }
+
+        // Initialize structure if needed
+        if (!addressesData.contracts) {
+            addressesData.contracts = {};
+        }
+
+        // Update WPC address
+        addressesData.contracts.WPC = WPC.address;
+        addressesData.lastUpdated = new Date().toISOString().split('T')[0];
+
+        // Save updated addresses
+        fs.writeFileSync(addressesPath, JSON.stringify(addressesData, null, 2));
+        console.log('💾 WPC address saved to test-addresses.json');
+
         console.log('\n📋 Deployment Summary:');
         console.log('├─ WPC Address:', WPC.address);
         console.log('├─ Deployer:', deployer.address);
@@ -51,9 +78,9 @@ async function deployWPC() {
         console.log('└─ Status: Ready for use ✅');
 
         console.log('\n💡 Next steps:');
-        console.log('├─ Update your .env file with: WPC_ADDRESS=' + WPC.address);
-        console.log('├─ Update tests/config.js with the new WPC address');
-        console.log('└─ Use this WPC in your Uniswap V3 deployment');
+        console.log('├─ WPC address automatically saved to test-addresses.json');
+        console.log('├─ Core and periphery deployments will use this address');
+        console.log('└─ Ready for Uniswap V3 deployment');
 
     } catch (error) {
         console.log('❌ WPC deployment failed:', error.message);

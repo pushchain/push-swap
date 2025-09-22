@@ -1,15 +1,40 @@
 const { ethers } = require('ethers');
+const fs = require('fs');
+const path = require('path');
 
-// Contract addresses from deployment (using existing WPC)
-const CONTRACTS = {
-    factory: '0xF02DA51d1Ef1c593a95f5C97d7BdFc49fbaBbaA5',
-    WPC: '0x2c7EbF633ffC84ea67eB6C8B232DC5f42970B818', // Updated WPC deployment
-    swapRouter: '0x34B10a283c2331Afa2C7a6bb5FB961E01f218fa0',
-    positionManager: '0xf90F08fD301190Cd34CC9eFc5A76351e95051670',
-    quoterV2: '0x4e8152fB4C72De9f187Cc93E85135283517B2fbB',
-    tickLens: '0x83D3B8bAe05C36b5404c1e284D306a6a1351Ef60',
-    multicall: '0x0b19E6e4dA71Be4F12db104373340d8fFc49880A'
-};
+// Function to load contract addresses from deployment JSON files
+function loadContractAddresses() {
+    const contracts = {};
+
+    try {
+        // Load core deployment (factory, WPC)
+        const coreDeploymentPath = path.join(__dirname, '../../v3-core/core-deployment.json');
+        if (fs.existsSync(coreDeploymentPath)) {
+            const coreDeployment = JSON.parse(fs.readFileSync(coreDeploymentPath, 'utf8'));
+            contracts.factory = coreDeployment.factory;
+            contracts.WPC = coreDeployment.WPC;
+        }
+
+        // Load periphery deployment (swapRouter, positionManager, etc.)
+        const peripheryDeploymentPath = path.join(__dirname, '../../v3-periphery/periphery-deployment.json');
+        if (fs.existsSync(peripheryDeploymentPath)) {
+            const peripheryDeployment = JSON.parse(fs.readFileSync(peripheryDeploymentPath, 'utf8'));
+            contracts.swapRouter = peripheryDeployment.contracts.swapRouter;
+            contracts.positionManager = peripheryDeployment.contracts.positionManager;
+            contracts.quoterV2 = peripheryDeployment.contracts.quoterV2;
+            contracts.tickLens = peripheryDeployment.contracts.tickLens;
+            contracts.multicall = peripheryDeployment.contracts.multicall;
+            contracts.migrator = peripheryDeployment.contracts.migrator;
+        }
+    } catch (error) {
+        console.warn('Warning: Could not load deployment addresses:', error.message);
+    }
+
+    return contracts;
+}
+
+// Contract addresses loaded from deployment JSON files
+const CONTRACTS = loadContractAddresses();
 
 // Contract ABIs
 const ABIS = {

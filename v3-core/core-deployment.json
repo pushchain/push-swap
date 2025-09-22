@@ -1,0 +1,15 @@
+{
+  "network": "unknown",
+  "chainId": 42101,
+  "WPC": "0xE17DD2E0509f99E9ee9469Cf6634048Ec5a3ADe9",
+  "factory": "0x81b8Bca02580C7d6b636051FDb7baAC436bFb454",
+  "owner": "0xEbf0Cfc34E07ED03c05615394E2292b387B63F12",
+  "deployer": "0xEbf0Cfc34E07ED03c05615394E2292b387B63F12",
+  "timestamp": "2025-09-22T11:41:50.148Z",
+  "transactionHash": "0x0397677116dd20d7cf6de31b8a60750e9f297e9a2efda2b84f49956ba4480a68",
+  "feeTiers": {
+    "500": 10,
+    "3000": 60,
+    "10000": 200
+  }
+}

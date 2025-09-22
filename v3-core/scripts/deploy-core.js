@@ -1,5 +1,6 @@
 const { ethers } = require('hardhat');
 const fs = require('fs');
+const path = require('path');
 
 async function main() {
     console.log('🚀 Deploying Uniswap V3 Core...\n');
@@ -12,9 +13,24 @@ async function main() {
     console.log('📋 Deploying with account:', deployer.address);
     console.log('💰 Account balance:', ethers.utils.formatEther(await deployer.getBalance()));
 
-    // Use existing WPC deployment
-    const WPC_ADDRESS = process.env.WPC_ADDRESS || "0xefFe95a7c6C4b7fcDC972b6B30FE9219Ad1AfD17";
-    console.log('\n💎 Using existing WPC contract:', WPC_ADDRESS);
+    // Load WPC address from test-addresses.json
+    let WPC_ADDRESS;
+    try {
+        const testAddressesPath = path.join(__dirname, '../../test-addresses.json');
+        if (fs.existsSync(testAddressesPath)) {
+            const testAddresses = JSON.parse(fs.readFileSync(testAddressesPath, 'utf8'));
+            WPC_ADDRESS = testAddresses.contracts?.WPC;
+        }
+    } catch (error) {
+        console.warn('Could not load WPC from test-addresses.json:', error.message);
+    }
+
+    if (!WPC_ADDRESS) {
+        console.error('❌ WPC address not found in test-addresses.json');
+        console.log('💡 Please deploy WPC first using: npm run deploy-wpush');
+        process.exit(1);
+    }
+    console.log('\n💎 Using WPC contract from test-addresses.json:', WPC_ADDRESS);
 
     // Deploy UniswapV3Factory
     console.log('\n📦 Deploying UniswapV3Factory...');
