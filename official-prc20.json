@@ -1,0 +1,70 @@
+{
+    "version": "1.0.0",
+    "lastUpdated": "2025-01-27",
+    "description": "Official PRC20 token addresses on Push Chain",
+    "tokens": {
+        "WETH.eth": {
+            "name": "WETH.eth",
+            "symbol": "WETH.eth",
+            "proxy": "0x0d0dF7E8807430A81104EA84d926139816eC7586",
+            "proxyAdmin": "0x50151B3819a0EC8ce06e6151fcB73a4988Da9Ce7",
+            "implementation": "0xaD110B017e633717A2470fCC42d792C79363b74F"
+        },
+        "USDT.eth": {
+            "name": "USDT.eth",
+            "symbol": "USDT.eth",
+            "proxy": "0xCA0C5E6F002A389E1580F0DB7cd06e4549B5F9d3",
+            "proxyAdmin": "0x058cA23199F481CE01336FbdD30e5f69dfb78b1b",
+            "implementation": "0x523294411f0CBFE40Ff8B7b415ef0e92f01ac38f"
+        },
+        "pETH": {
+            "name": "pETH",
+            "symbol": "pETH",
+            "proxy": "0x2971824Db68229D087931155C2b8bB820B275809",
+            "proxyAdmin": "0xB3E451A83C8F9AeFC8c61118e302Fec42509e28D",
+            "implementation": "0x8FDe8f8Aa8866C65e7b05F466053f7047905548F"
+        },
+        "stETH.eth": {
+            "name": "stETH.eth",
+            "symbol": "stETH.eth",
+            "proxy": "0xaf89E805949c628ebde3262e91dc4ab9eA12668E",
+            "proxyAdmin": "0x808908D379D43FC4D23c2F4b358A30E4777FCe8e",
+            "implementation": "0x0ccbCbcB9f6c7604E9480148287ae88d20822239"
+        },
+        "USDC.eth": {
+            "name": "USDC.eth",
+            "symbol": "USDC.eth",
+            "proxy": "0x387b9C8Db60E74999aAAC5A2b7825b400F12d68E",
+            "proxyAdmin": "0x645bFD9eB55430fCdeC75a025520c0bFF806059D",
+            "implementation": "0xc4D6C350aD5FE6A21Fbc0849ECBE9Ab13EA77Ffd"
+        },
+        "pSOL": {
+            "name": "pSOL",
+            "symbol": "pSOL",
+            "proxy": "0x5D525Df2bD99a6e7ec58b76aF2fd95F39874EBed",
+            "proxyAdmin": "0x3825EF56D1cb1241fe210c90E1c7dcAa0aF1Eb0E",
+            "implementation": "0xc1D266457503f8156386732FC8B57d8cC0E5BB0f"
+        },
+        "USDC.sol": {
+            "name": "USDC.sol",
+            "symbol": "USDC.sol",
+            "proxy": "0x04B8F634ABC7C879763F623e0f0550a4b5c4426F",
+            "proxyAdmin": "0xC65e0Bd489B26A7406c9258441b0a70e09e6fEA1",
+            "implementation": "0x4A820cF1b7570Cf7c64DCc716cec7F8b16F28C7e"
+        },
+        "USDT.sol": {
+            "name": "USDT.sol",
+            "symbol": "USDT.sol",
+            "proxy": "0x4f1A3D22d170a2F4Bddb37845a962322e24f4e34",
+            "proxyAdmin": "0x4fE5d3F5358E3508841Aeb3f77B97606e3a08C51",
+            "implementation": "0xc7E827c9aE134bcee97E2157D769Ab0c80CaF2C1"
+        },
+        "DAI.sol": {
+            "name": "DAI.sol",
+            "symbol": "DAI.sol",
+            "proxy": "0x5861f56A556c990358cc9cccd8B5baa3767982A8",
+            "proxyAdmin": "0x74e9689f1f3433A926931b62a7423284AD26DADa",
+            "implementation": "0xa580aA918a5B8a249700f478d2Ec824e47Db447F"
+        }
+    }
+}
