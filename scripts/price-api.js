@@ -44,44 +44,71 @@ function getPools() {
     return pools;
 }
 
-// Dynamic token configurations
-function getTokens() {
-    const tokens = {};
+// Universal ERC20/PRC20 ABI for dynamic token discovery
+const ERC20_ABI = [
+    "function symbol() external view returns (string)",
+    "function decimals() external view returns (uint8)",
+    "function name() external view returns (string)"
+];
 
-    // Add WPC from test-addresses.json
+// Universal token discovery - fetches token info directly from blockchain
+async function discoverTokenInfo(tokenAddress) {
+    try {
+        const provider = config.getSigner().provider;
+        const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
+
+        const [symbol, decimals, name] = await Promise.all([
+            tokenContract.symbol(),
+            tokenContract.decimals(),
+            tokenContract.name()
+        ]);
+
+        return {
+            symbol: symbol,
+            decimals: decimals,
+            name: name,
+            address: tokenAddress
+        };
+    } catch (error) {
+        console.warn(`Could not discover token info for ${tokenAddress}:`, error.message);
+        return null;
+    }
+}
+
+// Universal token configurations - discovers all tokens dynamically
+async function getTokens() {
+    const tokens = {};
+    const tokenAddresses = new Set();
+
+    // Collect all unique token addresses from various sources
     if (addressesData.contracts?.WPC) {
-        tokens[addressesData.contracts.WPC] = { symbol: "WPC", decimals: 18 };
+        tokenAddresses.add(addressesData.contracts.WPC);
     }
 
     // Add official tokens from official-prc20.json
     for (const [symbol, tokenData] of Object.entries(officialTokens)) {
         if (tokenData.Proxy) {
-            tokens[tokenData.Proxy] = {
-                symbol: symbol,
-                decimals: symbol.includes('USDT') || symbol.includes('USDC') ? 6 : 18
-            };
+            tokenAddresses.add(tokenData.Proxy);
         }
     }
 
-    // Add tokens from pool data (for deployed test tokens)
+    // Add tokens from pool data
     if (addressesData.pools) {
         for (const [poolKey, poolData] of Object.entries(addressesData.pools)) {
-            // Add token0 if not already present
-            if (poolData.token0 && !tokens[poolData.token0]) {
-                tokens[poolData.token0] = {
-                    symbol: poolData.token0Symbol || "UNKNOWN",
-                    decimals: poolData.token0Symbol?.includes('USDT') || poolData.token0Symbol?.includes('USDC') ? 6 : 18
-                };
-            }
-            // Add token1 if not already present
-            if (poolData.token1 && !tokens[poolData.token1]) {
-                tokens[poolData.token1] = {
-                    symbol: poolData.token1Symbol || "UNKNOWN",
-                    decimals: poolData.token1Symbol?.includes('USDT') || poolData.token1Symbol?.includes('USDC') ? 6 : 18
-                };
-            }
+            if (poolData.token0) tokenAddresses.add(poolData.token0);
+            if (poolData.token1) tokenAddresses.add(poolData.token1);
         }
     }
+
+    // Discover token info for all addresses
+    const discoveryPromises = Array.from(tokenAddresses).map(async (address) => {
+        const tokenInfo = await discoverTokenInfo(address);
+        if (tokenInfo) {
+            tokens[address] = tokenInfo;
+        }
+    });
+
+    await Promise.all(discoveryPromises);
 
     return tokens;
 }
@@ -96,7 +123,7 @@ async function getPrice(tokenInSymbol, tokenOutSymbol, amountIn) {
     try {
         // Get dynamic data
         const POOLS = getPools();
-        const TOKENS = getTokens();
+        const TOKENS = await getTokens();
 
         // Find the pool for this token pair
         let poolInfo = null;
@@ -173,7 +200,15 @@ async function tryQuoterV2(tokenIn, tokenOut, amountIn, fee, TOKENS) {
         const quoterAddress = addressesData.contracts.quoterV2;
         const quoterContract = new ethers.Contract(quoterAddress, QUOTER_V2_ABI, signer);
 
-        const amountInWei = ethers.utils.parseUnits(amountIn.toString(), 18);
+        // Get token decimals dynamically
+        const tokenInInfo = TOKENS[tokenIn];
+        const tokenOutInfo = TOKENS[tokenOut];
+
+        if (!tokenInInfo || !tokenOutInfo) {
+            throw new Error(`Token info not found for ${tokenIn} or ${tokenOut}`);
+        }
+
+        const amountInWei = ethers.utils.parseUnits(amountIn.toString(), tokenInInfo.decimals);
 
         const quoteParams = {
             tokenIn: tokenIn,
@@ -185,11 +220,7 @@ async function tryQuoterV2(tokenIn, tokenOut, amountIn, fee, TOKENS) {
 
         const result = await quoterContract.quoteExactInputSingle(quoteParams);
 
-        // Get token decimals dynamically
-        const tokenOutInfo = TOKENS[tokenOut];
-        const tokenOutDecimals = tokenOutInfo ? tokenOutInfo.decimals : 18;
-
-        const amountOut = parseFloat(ethers.utils.formatUnits(result.amountOut, tokenOutDecimals));
+        const amountOut = parseFloat(ethers.utils.formatUnits(result.amountOut, tokenOutInfo.decimals));
 
         return {
             success: true,
@@ -205,9 +236,9 @@ async function tryQuoterV2(tokenIn, tokenOut, amountIn, fee, TOKENS) {
 }
 
 // Get all available pools
-function getAvailablePools() {
+async function getAvailablePools() {
     const POOLS = getPools();
-    const TOKENS = getTokens();
+    const TOKENS = await getTokens();
 
     const pools = [];
     for (const [poolKey, pool] of Object.entries(POOLS)) {
@@ -222,12 +253,14 @@ function getAvailablePools() {
                 token0: {
                     address: pool.token0,
                     symbol: token0Info.symbol,
-                    decimals: token0Info.decimals
+                    decimals: token0Info.decimals,
+                    name: token0Info.name
                 },
                 token1: {
                     address: pool.token1,
                     symbol: token1Info.symbol,
-                    decimals: token1Info.decimals
+                    decimals: token1Info.decimals,
+                    name: token1Info.name
                 },
                 fee: pool.fee
             });
@@ -238,19 +271,39 @@ function getAvailablePools() {
 }
 
 // Get all available tokens
-function getAvailableTokens() {
-    const TOKENS = getTokens();
+async function getAvailableTokens() {
+    const TOKENS = await getTokens();
 
     const tokens = [];
     for (const [address, tokenInfo] of Object.entries(TOKENS)) {
         tokens.push({
             address: address,
             symbol: tokenInfo.symbol,
-            decimals: tokenInfo.decimals
+            decimals: tokenInfo.decimals,
+            name: tokenInfo.name
         });
     }
 
     return tokens;
+}
+
+// Add new token manually (for future tokens not in pools yet)
+async function addToken(tokenAddress) {
+    try {
+        const tokenInfo = await discoverTokenInfo(tokenAddress);
+        if (tokenInfo) {
+            console.log(`✅ Added token: ${tokenInfo.symbol} (${tokenInfo.name})`);
+            console.log(`   Address: ${tokenAddress}`);
+            console.log(`   Decimals: ${tokenInfo.decimals}`);
+            return tokenInfo;
+        } else {
+            console.log(`❌ Could not add token at ${tokenAddress}`);
+            return null;
+        }
+    } catch (error) {
+        console.log(`❌ Error adding token: ${error.message}`);
+        return null;
+    }
 }
 
 // CLI interface for testing
@@ -258,7 +311,7 @@ if (require.main === module) {
     const args = process.argv.slice(2);
 
     if (args.length === 0) {
-        console.log('🎯 PRICE API - Available Commands:');
+        console.log('🌍 UNIVERSAL PRICE API - 100% Future Compatible');
         console.log('');
         console.log('📊 Get Price:');
         console.log('  node scripts/price-api.js price <tokenIn> <tokenOut> <amount>');
@@ -270,24 +323,36 @@ if (require.main === module) {
         console.log('🪙 List Tokens:');
         console.log('  node scripts/price-api.js tokens');
         console.log('');
+        console.log('➕ Add New Token:');
+        console.log('  node scripts/price-api.js add-token <address>');
+        console.log('');
         process.exit(1);
     }
 
     const command = args[0];
 
     if (command === 'pools') {
-        const pools = getAvailablePools();
-        console.log('📊 Available Pools:');
-        pools.forEach(pool => {
-            console.log(`├─ ${pool.name}: ${pool.token0.symbol}/${pool.token1.symbol} (${pool.fee} fee)`);
-            console.log(`│  Address: ${pool.address}`);
+        getAvailablePools().then(pools => {
+            console.log('📊 Available Pools:');
+            pools.forEach(pool => {
+                console.log(`├─ ${pool.name}: ${pool.token0.symbol}/${pool.token1.symbol} (${pool.fee} fee)`);
+                console.log(`│  Address: ${pool.address}`);
+                console.log(`│  Token0: ${pool.token0.name} (${pool.token0.decimals} decimals)`);
+                console.log(`│  Token1: ${pool.token1.name} (${pool.token1.decimals} decimals)`);
+            });
         });
     } else if (command === 'tokens') {
-        const tokens = getAvailableTokens();
-        console.log('🪙 Available Tokens:');
-        tokens.forEach(token => {
-            console.log(`├─ ${token.symbol}: ${token.address} (${token.decimals} decimals)`);
+        getAvailableTokens().then(tokens => {
+            console.log('🪙 Available Tokens:');
+            tokens.forEach(token => {
+                console.log(`├─ ${token.symbol}: ${token.name}`);
+                console.log(`│  Address: ${token.address}`);
+                console.log(`│  Decimals: ${token.decimals}`);
+            });
         });
+    } else if (command === 'add-token' && args.length === 2) {
+        const tokenAddress = args[1];
+        addToken(tokenAddress);
     } else if (command === 'price' && args.length === 4) {
         const tokenIn = args[1];
         const tokenOut = args[2];
@@ -315,5 +380,7 @@ if (require.main === module) {
 module.exports = {
     getPrice,
     getAvailablePools,
-    getAvailableTokens
+    getAvailableTokens,
+    addToken,
+    discoverTokenInfo
 };
