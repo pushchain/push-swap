@@ -46,6 +46,21 @@
       "currentTick": "105971",
       "targetPricing": "1 pETH = 40000 WPC",
       "createdAt": "2025-09-22T14:34:24.725Z"
+    },
+    "USDT_WPC_500": {
+      "name": "USDT/WPC Pool",
+      "address": "0x2d46b2b92266f34345934F17039768cd631aB026",
+      "token0": "0xCA0C5E6F002A389E1580F0DB7cd06e4549B5F9d3",
+      "token1": "0xE17DD2E0509f99E9ee9469Cf6634048Ec5a3ADe9",
+      "token0Symbol": "USDT",
+      "token1Symbol": "WPC",
+      "fee": 500,
+      "feePercentage": "0.05%",
+      "priceRatio": 10,
+      "sqrtPriceX96": "250541448375047931186413801569606323",
+      "currentTick": "299351",
+      "targetPricing": "1 USDT = 0.1 WPC",
+      "createdAt": "2025-09-23T13:41:51.140Z"
     }
   }
 }
