@@ -261,17 +261,22 @@ async function createPool(token0Address, token1Address, priceRatio, fee = 3000, 
 
         let actualPriceRatio;
 
-        // Case 1: inputToken0=pETH, inputToken1=pUSDC, input="1 pETH = 4000 pUSDC"
-        // Pool: token0=pUSDC, token1=pETH
-        // Need: token1/token0 = pETH/pUSDC = 1/4000 = 0.00025
-        if (inputSymbol0 === sortedSymbol1 && inputSymbol1 === sortedSymbol0) {
-            actualPriceRatio = 1 / priceRatio;
-            console.log('├─ Case: Input swapped vs pool order');
-            console.log('├─ Calculation: token1/token0 =', sortedSymbol1 + '/' + sortedSymbol0, '= 1/' + priceRatio, '=', actualPriceRatio);
-        } else {
+        // FIXED LOGIC: Always maintain the intended price relationship
+        // Input format: "1 inputToken0 = priceRatio inputToken1"
+        // We want: 1 inputToken0 = priceRatio inputToken1 regardless of sorting
+
+        if (inputSymbol0 === sortedSymbol0 && inputSymbol1 === sortedSymbol1) {
+            // Input order matches pool order: token0=inputToken0, token1=inputToken1
+            // Pool needs: token1/token0 = inputToken1/inputToken0 = priceRatio
             actualPriceRatio = priceRatio;
             console.log('├─ Case: Input matches pool order');
             console.log('├─ Calculation: token1/token0 =', sortedSymbol1 + '/' + sortedSymbol0, '=', priceRatio);
+        } else {
+            // Input order is swapped: token0=inputToken1, token1=inputToken0
+            // Pool needs: token1/token0 = inputToken0/inputToken1 = 1/priceRatio
+            actualPriceRatio = 1 / priceRatio;
+            console.log('├─ Case: Input swapped vs pool order');
+            console.log('├─ Calculation: token1/token0 =', sortedSymbol1 + '/' + sortedSymbol0, '= 1/' + priceRatio, '=', actualPriceRatio);
         }
 
         console.log('├─ Input price meaning: 1', inputSymbol0, '=', priceRatio, inputSymbol1);
