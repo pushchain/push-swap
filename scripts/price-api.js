@@ -54,7 +54,7 @@ const ERC20_ABI = [
 // Universal token discovery - fetches token info directly from blockchain
 async function discoverTokenInfo(tokenAddress) {
     try {
-        const provider = config.getSigner().provider;
+        const provider = new ethers.providers.JsonRpcProvider(process.env.PUSH_RPC_URL);
         const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, provider);
 
         const [symbol, decimals, name] = await Promise.all([
@@ -196,9 +196,9 @@ async function getPrice(tokenInSymbol, tokenOutSymbol, amountIn) {
 // QuoterV2 implementation
 async function tryQuoterV2(tokenIn, tokenOut, amountIn, fee, TOKENS) {
     try {
-        const signer = config.getSigner();
+        const provider = new ethers.providers.JsonRpcProvider(process.env.PUSH_RPC_URL);
         const quoterAddress = addressesData.contracts.quoterV2;
-        const quoterContract = new ethers.Contract(quoterAddress, QUOTER_V2_ABI, signer);
+        const quoterContract = new ethers.Contract(quoterAddress, QUOTER_V2_ABI, provider);
 
         // Get token decimals dynamically
         const tokenInInfo = TOKENS[tokenIn];
