@@ -61,6 +61,21 @@
       "currentTick": "299351",
       "targetPricing": "1 USDT = 0.1 WPC",
       "createdAt": "2025-09-23T13:41:51.140Z"
+    },
+    "USDC.eth_WPC_500": {
+      "name": "USDC.eth/WPC Pool",
+      "address": "0x69B21660F49f2B8F60B0177Abc751a08EBEa0Ae3",
+      "token0": "0x387b9C8Db60E74999aAAC5A2b7825b400F12d68E",
+      "token1": "0xE17DD2E0509f99E9ee9469Cf6634048Ec5a3ADe9",
+      "token0Symbol": "USDC.eth",
+      "token1Symbol": "WPC",
+      "fee": 500,
+      "feePercentage": "0.05%",
+      "priceRatio": 10,
+      "sqrtPriceX96": "250541448375047931186413801569606323",
+      "currentTick": "299351",
+      "targetPricing": "1 USDC.eth = 0.1 WPC",
+      "createdAt": "2025-09-23T14:46:59.335Z"
     }
   }
 }
