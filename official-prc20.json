@@ -1,6 +1,6 @@
 {
     "version": "1.0.0",
-    "lastUpdated": "2025-01-27",
+    "lastUpdated": "2025-01-11",
     "description": "Official PRC20 token addresses on Push Chain",
     "tokens": {
         "WETH.eth": {
@@ -65,6 +65,16 @@
             "proxy": "0x5861f56A556c990358cc9cccd8B5baa3767982A8",
             "proxyAdmin": "0x74e9689f1f3433A926931b62a7423284AD26DADa",
             "implementation": "0xa580aA918a5B8a249700f478d2Ec824e47Db447F"
+        },
+        "pETH.base": {
+            "name": "pETH.base",
+            "symbol": "pETH.base",
+            "proxy": "0xc7007af2B24D4eb963fc9633B0c66e1d2D90Fc21"
+        },
+        "USDT.base": {
+            "name": "USDT.base",
+            "symbol": "USDT.base",
+            "proxy": "0x2C455189D2af6643B924A981a9080CcC63d5a567"
         }
     }
 }
