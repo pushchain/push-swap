@@ -106,6 +106,36 @@
       "currentTick": "105971",
       "targetPricing": "1 pETH.base = 0.000025 WPC",
       "createdAt": "2025-10-11T09:23:17.162Z"
+    },
+    "pETH.arb_WPC_3000": {
+      "name": "pETH.arb/WPC Pool",
+      "address": "0x1354c9A72F447f60F4811FC34b8C2e084FE338A3",
+      "token0": "0xc0a821a1AfEd1322c5e15f1F4586C0B8cE65400e",
+      "token1": "0xE17DD2E0509f99E9ee9469Cf6634048Ec5a3ADe9",
+      "token0Symbol": "pETH.arb",
+      "token1Symbol": "WPC",
+      "fee": 3000,
+      "feePercentage": "0.30%",
+      "priceRatio": 40000,
+      "sqrtPriceX96": "15845632502852867518708790067200",
+      "currentTick": "105971",
+      "targetPricing": "1 pETH.arb = 0.000025 WPC",
+      "createdAt": "2025-10-12T17:24:43.064Z"
+    },
+    "USDT.arb_WPC_500": {
+      "name": "USDT.arb/WPC Pool",
+      "address": "0xF95B20Cf3f2dE495747EB3d33611D0FFEA29F448",
+      "token0": "0x76Ad08339dF606BeEDe06f90e3FaF82c5b2fb2E9",
+      "token1": "0xE17DD2E0509f99E9ee9469Cf6634048Ec5a3ADe9",
+      "token0Symbol": "USDT.arb",
+      "token1Symbol": "WPC",
+      "fee": 500,
+      "feePercentage": "0.05%",
+      "priceRatio": 10,
+      "sqrtPriceX96": "250541448375047931186413801569606323",
+      "currentTick": "299351",
+      "targetPricing": "1 USDT.arb = 0.1 WPC",
+      "createdAt": "2025-10-12T17:25:35.016Z"
     }
   }
 }

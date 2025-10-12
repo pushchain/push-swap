@@ -75,6 +75,16 @@
             "name": "USDT.base",
             "symbol": "USDT.base",
             "proxy": "0x2C455189D2af6643B924A981a9080CcC63d5a567"
+        },
+        "pETH.arb": {
+            "name": "pETH.arb",
+            "symbol": "pETH.arb",
+            "proxy": "0xc0a821a1AfEd1322c5e15f1F4586C0B8cE65400e"
+        },
+        "USDT.arb": {
+            "name": "USDT.arb",
+            "symbol": "USDT.arb",
+            "proxy": "0x76Ad08339dF606BeEDe06f90e3FaF82c5b2fb2E9"
         }
     }
 }
