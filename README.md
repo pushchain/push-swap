@@ -22,9 +22,9 @@ push-swap/
 
 The following files contain deployed contract addresses and pool information:
 
-- **[`core-deployment.json`](./core-deployment.json)** - Uniswap V3 core contracts deployment:
+- **[`core-deployment.json`](./v3-core/core-deployment.json)** - Uniswap V3 core contracts deployment:
 
-- **[`periphery-deployment.json`](./periphery-deployment.json)** - Uniswap V3 periphery contracts deployment:
+- **[`periphery-deployment.json`](./v3-periphery/periphery-deployment.json)** - Uniswap V3 periphery contracts deployment:
 
 - **[`test-addresses.json`](./test-addresses.json)** - Current active deployment addresses:
 
