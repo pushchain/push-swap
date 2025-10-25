@@ -136,6 +136,36 @@
       "currentTick": "299351",
       "targetPricing": "1 USDT.arb = 0.1 WPC",
       "createdAt": "2025-10-12T17:25:35.016Z"
+    },
+    "USDT.bsc_WPC_500": {
+      "name": "USDT.bsc/WPC Pool",
+      "address": "0x435875db8a76cCAA9cbf73690C6Dc1913BBC9168",
+      "token0": "0x2f98B4235FD2BA0173a2B056D722879360B12E7b",
+      "token1": "0xE17DD2E0509f99E9ee9469Cf6634048Ec5a3ADe9",
+      "token0Symbol": "USDT.bsc",
+      "token1Symbol": "WPC",
+      "fee": 500,
+      "feePercentage": "0.05%",
+      "priceRatio": 10,
+      "sqrtPriceX96": "250541448375047931186413801569606323",
+      "currentTick": "299351",
+      "targetPricing": "1 USDT.bsc = 0.1 WPC",
+      "createdAt": "2025-10-17T13:50:37.544Z"
+    },
+    "pBNB_WPC_500": {
+      "name": "pBNB/WPC Pool",
+      "address": "0x826edC20c926653f4ddC01b8d4C7Df31a403e7d6",
+      "token0": "0x7a9082dA308f3fa005beA7dB0d203b3b86664E36",
+      "token1": "0xE17DD2E0509f99E9ee9469Cf6634048Ec5a3ADe9",
+      "token0Symbol": "pBNB",
+      "token1Symbol": "WPC",
+      "fee": 500,
+      "feePercentage": "0.05%",
+      "priceRatio": 10638,
+      "sqrtPriceX96": "8171646606470663447671344624169",
+      "currentTick": "92726",
+      "targetPricing": "1 pBNB = 0.00009400263207369807 WPC",
+      "createdAt": "2025-10-17T13:51:35.783Z"
     }
   }
 }

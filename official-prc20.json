@@ -85,6 +85,16 @@
             "name": "USDT.arb",
             "symbol": "USDT.arb",
             "proxy": "0x76Ad08339dF606BeEDe06f90e3FaF82c5b2fb2E9"
+        },
+        "USDT.bsc": {
+            "name": "USDT.bnb",
+            "symbol": "USDT.bnb",
+            "proxy": "0x2f98B4235FD2BA0173a2B056D722879360B12E7b"
+        },
+        "pBNB": {
+            "name": "pBNB",
+            "symbol": "pBNB",
+            "proxy": "0x7a9082dA308f3fa005beA7dB0d203b3b86664E36"
         }
     }
 }
