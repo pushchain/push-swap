@@ -655,6 +655,113 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
     }
 }
 
+// Route swap (multi-hop) - Example: USDC.arb -> WPC -> USDC.base
+async function routeSwap(tokenInAddress, tokenOutAddress, amountIn, routeTokens, routeFees) {
+    console.log('🔀 PERFORMING ROUTE SWAP');
+    console.log('='.repeat(50));
+
+    try {
+        const signer = config.getSigner();
+        const swapRouter = config.getContract('swapRouter');
+
+        // Get token contracts
+        const tokenIn = new ethers.Contract(tokenInAddress, config.ABIS.prc20, signer);
+        const tokenOut = new ethers.Contract(tokenOutAddress, config.ABIS.prc20, signer);
+
+        const decimalsIn = await tokenIn.decimals();
+        const decimalsOut = await tokenOut.decimals();
+        const symbolIn = await tokenIn.symbol();
+        const symbolOut = await tokenOut.symbol();
+
+        const amountInParsed = ethers.utils.parseUnits(amountIn, decimalsIn);
+
+        console.log('├─ Token In:', symbolIn, tokenInAddress);
+        console.log('├─ Token Out:', symbolOut, tokenOutAddress);
+        console.log('├─ Amount In:', amountIn, symbolIn);
+        console.log('├─ Route:', routeTokens.map(t => t.symbol).join(' → '));
+        console.log('├─ Fees:', routeFees.join(' bps → '), 'bps');
+
+        // Get balances before
+        const balanceInBefore = await tokenIn.balanceOf(signer.address);
+        const balanceOutBefore = await tokenOut.balanceOf(signer.address);
+
+        console.log('├─ Balance In Before:', ethers.utils.formatUnits(balanceInBefore, decimalsIn), symbolIn);
+        console.log('├─ Balance Out Before:', ethers.utils.formatUnits(balanceOutBefore, decimalsOut), symbolOut);
+
+        // Safe approve token
+        console.log('├─ Safe approving token...');
+        await safeApprove(tokenIn, swapRouter.address, amountInParsed, signer.address);
+
+        // Encode path: token0 + fee0 + token1 + fee1 + token2 + ...
+        // Build path incrementally: start with first token, then add fee+token pairs
+        let pathTypes = ['address'];
+        let pathValues = [routeTokens[0].address];
+
+        for (let i = 0; i < routeFees.length; i++) {
+            pathTypes.push('uint24');
+            pathTypes.push('address');
+            pathValues.push(routeFees[i]);
+            pathValues.push(routeTokens[i + 1].address);
+        }
+
+        const path = ethers.utils.solidityPack(pathTypes, pathValues);
+
+        console.log('├─ Encoded Path:', path);
+
+        const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
+
+        const swapParams = {
+            path: path,
+            recipient: signer.address,
+            deadline: deadline,
+            amountIn: amountInParsed,
+            amountOutMinimum: 0
+        };
+
+        console.log('├─ Swap params:', JSON.stringify(swapParams, null, 2));
+        console.log('├─ Executing route swap...');
+
+        const swapTx = await swapRouter.exactInput(swapParams);
+        console.log('├─ Transaction sent:', swapTx.hash);
+
+        const receipt = await swapTx.wait();
+        console.log('├─ Transaction confirmed, gas used:', receipt.gasUsed.toString());
+
+        // Get balances after
+        const balanceInAfter = await tokenIn.balanceOf(signer.address);
+        const balanceOutAfter = await tokenOut.balanceOf(signer.address);
+
+        const amountInUsed = balanceInBefore.sub(balanceInAfter);
+        const amountOutReceived = balanceOutAfter.sub(balanceOutBefore);
+
+        console.log('📊 Route Swap Results:');
+        console.log('├─ Amount In Used:', ethers.utils.formatUnits(amountInUsed, decimalsIn), symbolIn);
+        console.log('├─ Amount Out Received:', ethers.utils.formatUnits(amountOutReceived, decimalsOut), symbolOut);
+
+        if (amountOutReceived.gt(0)) {
+            const rate = parseFloat(ethers.utils.formatUnits(amountOutReceived, decimalsOut)) /
+                parseFloat(ethers.utils.formatUnits(amountInUsed, decimalsIn));
+            console.log('├─ Exchange Rate:', `1 ${symbolIn} = ${rate} ${symbolOut}`);
+            console.log('├─ ✅ ROUTE SWAP SUCCESS: Received', amountOutReceived.toString(), 'wei of', symbolOut);
+        } else {
+            console.log('├─ ❌ NO OUTPUT: Zero tokens received');
+        }
+        console.log('└─ Transaction Hash:', receipt.transactionHash);
+
+        console.log('💰 New Balances:');
+        console.log('├─ Token In:', ethers.utils.formatUnits(balanceInAfter, decimalsIn), symbolIn);
+        console.log('└─ Token Out:', ethers.utils.formatUnits(balanceOutAfter, decimalsOut), symbolOut);
+
+        console.log('🎉 Route swap completed successfully!');
+
+        return receipt.transactionHash;
+
+    } catch (error) {
+        console.error('❌ Route swap failed:', error.message);
+        throw error;
+    }
+}
+
 // Add full-range liquidity (covers all possible prices)
 async function addFullRangeLiquidity(poolAddress, token0Address, token1Address, amount0, amount1) {
     console.log('💰 ADDING FULL-RANGE LIQUIDITY');
@@ -825,6 +932,52 @@ async function main() {
                 // node pool-manager.js swap <poolAddress> <tokenInAddress> <tokenOutAddress> <amountIn>
                 const [poolAddress, tokenInAddr, tokenOutAddr, amountIn] = args.slice(1);
                 await performSwap(poolAddress, tokenInAddr, tokenOutAddr, amountIn);
+                break;
+
+            case 'route-swap':
+                // node pool-manager.js route-swap <tokenIn> <tokenOut> <amount> <intermediateToken1> [intermediateToken2...] --fees <fee1> <fee2> [fee3...]
+                // Example: node pool-manager.js route-swap USDC.arb USDC.base 10 WPC --fees 500 500
+                const routeArgs = args.slice(1);
+                const feesIndex = routeArgs.indexOf('--fees');
+
+                if (feesIndex === -1 || routeArgs.length < 4) {
+                    console.error('❌ Invalid route-swap arguments');
+                    console.log('Usage: node pool-manager.js route-swap <tokenIn> <tokenOut> <amount> <intermediateToken1> [intermediateToken2...] --fees <fee1> <fee2> [fee3...]');
+                    process.exit(1);
+                }
+
+                const tokenInSymbol = routeArgs[0];
+                const tokenOutSymbol = routeArgs[1];
+                const routeAmount = routeArgs[2];
+                const intermediateTokens = routeArgs.slice(3, feesIndex);
+                const fees = routeArgs.slice(feesIndex + 1).map(f => parseInt(f));
+
+                // Load official PRC20 tokens
+                const officialPRC20Path = path.join(__dirname, '..', 'official-prc20.json');
+                const officialPRC20 = JSON.parse(fs.readFileSync(officialPRC20Path, 'utf8'));
+
+                // Get WPC address
+                const WPCAddress = config.CONTRACTS.WPC;
+
+                // Build route tokens array
+                const routeTokensList = [tokenInSymbol, ...intermediateTokens, tokenOutSymbol];
+                const routeTokensInfo = routeTokensList.map(symbol => {
+                    if (symbol === 'WPC') {
+                        return { symbol: 'WPC', address: WPCAddress };
+                    }
+                    const token = officialPRC20.tokens[symbol];
+                    if (!token) {
+                        throw new Error(`Token ${symbol} not found in official-prc20.json`);
+                    }
+                    return { symbol: symbol, address: token.proxy };
+                });
+
+                if (fees.length !== routeTokensInfo.length - 1) {
+                    console.error(`❌ Number of fees (${fees.length}) must be one less than number of tokens (${routeTokensInfo.length})`);
+                    process.exit(1);
+                }
+
+                await routeSwap(routeTokensInfo[0].address, routeTokensInfo[routeTokensInfo.length - 1].address, routeAmount, routeTokensInfo, fees);
                 break;
 
             case 'add-liquidity-full-range':
