@@ -8,6 +8,7 @@ Uniswap V3 implementation for Push Chain with proper sqrtPriceX96 calculations a
 push-swap/
 ├── scripts/
 │   ├── pool-manager.js              # Main operations script
+│   ├── price-api.js                 # Price quotes and token information API
 │   ├── deploy-all.js                # Complete DEX deployment
 │   ├── deploy-WPC.js              # WPC token deployment
 │   └── core/
@@ -84,6 +85,7 @@ node scripts/pool-manager.js swap [pool_addr] [pETH_addr] [WPC_addr] 1
 |--------|-------------|---------|
 | `deploy-dex` | Complete DEX deployment | `npm run deploy-dex` |
 | `pool-manager` | Individual operations | `npm run pool-manager [command] [args]` |
+| `price-api` | Price quotes and token information | `node scripts/price-api.js [command] [args]` |
 | `deploy-core` | Deploy core contracts | `npm run deploy-core` |
 | `deploy-periphery` | Deploy periphery contracts | `npm run deploy-periphery` |
 
@@ -102,6 +104,49 @@ node scripts/pool-manager.js add-liquidity [poolAddr] [token0] [token1] [amount0
 # Token Swaps
 node scripts/pool-manager.js swap [poolAddr] [tokenIn] [tokenOut] [amountIn]
 ```
+
+## price-api.js Commands
+
+The `price-api.js` script provides a production-ready price API for fetching quotes and token information.
+
+### Get Price Quote
+```bash
+# Get price quote for swapping tokens
+node scripts/price-api.js price <tokenIn> <tokenOut> <amount>
+
+# Examples
+node scripts/price-api.js price WPC USDT 1
+node scripts/price-api.js price WPC "USDC.eth" 1
+node scripts/price-api.js price pETH WPC 1
+```
+
+### List Available Pools
+```bash
+# List all configured pools with token information
+node scripts/price-api.js pools
+```
+
+### List Available Tokens
+```bash
+# List all available tokens with their addresses and decimals
+node scripts/price-api.js tokens
+```
+
+### Add New Token
+```bash
+# Add a new token by address (for tokens not yet in pools)
+node scripts/price-api.js add-token <address>
+```
+
+### Available Tokens
+The following tokens are available for price queries (use the symbol, not the name):
+- **WPC** - Wrapped Push Coin (base token in all pools)
+- **pSOL**, **pETH**, **pBNB** - Push native tokens
+- **USDT**, **USDC.eth**, **USDC.arb**, **USDC.base** - Stablecoins
+- **USDT.base**, **USDT.arb**, **USDT.bsc** - Cross-chain USDT
+- **pETH.base**, **pETH.arb** - Cross-chain pETH
+
+**Note:** Use the token's **symbol** (shown in `tokens` command), not the name. For example, use `USDT` not `USDT.eth`.
 
 ## Price Calculation
 
