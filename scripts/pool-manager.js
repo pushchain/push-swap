@@ -351,7 +351,7 @@ async function createPool(token0Address, token1Address, priceRatio, fee = 3000, 
             priceRatio: actualPriceRatio,
             sqrtPriceX96: sqrtPriceX96.toString(),
             currentTick: slot0.tick.toString(),
-            targetPricing: `1 ${token0Symbol} = ${1 / actualPriceRatio} ${token1Symbol}`,
+            targetPricing: `1 ${token0Symbol} = ${actualPriceRatio} ${token1Symbol}`,
             createdAt: new Date().toISOString()
         };
 

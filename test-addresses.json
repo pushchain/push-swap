@@ -59,7 +59,7 @@
       "priceRatio": 10,
       "sqrtPriceX96": "250541448375047931186413801569606323",
       "currentTick": "299351",
-      "targetPricing": "1 USDT = 0.1 WPC",
+      "targetPricing": "1 USDT = 10 WPC",
       "createdAt": "2025-09-23T13:41:51.140Z"
     },
     "USDC.eth_WPC_500": {
@@ -74,7 +74,7 @@
       "priceRatio": 10,
       "sqrtPriceX96": "250541448375047931186413801569606323",
       "currentTick": "299351",
-      "targetPricing": "1 USDC.eth = 0.1 WPC",
+      "targetPricing": "1 USDC.eth = 10 WPC",
       "createdAt": "2025-09-23T14:46:59.335Z"
     },
     "USDT.base_WPC_500": {
@@ -89,7 +89,7 @@
       "priceRatio": 10,
       "sqrtPriceX96": "250541448375047931186413801569606323",
       "currentTick": "299351",
-      "targetPricing": "1 USDT.base = 0.1 WPC",
+      "targetPricing": "1 USDT.base = 10 WPC",
       "createdAt": "2025-10-11T09:17:23.740Z"
     },
     "pETH.base_WPC_500": {
@@ -104,7 +104,7 @@
       "priceRatio": 40000,
       "sqrtPriceX96": "15845632502852867518708790067200",
       "currentTick": "105971",
-      "targetPricing": "1 pETH.base = 0.000025 WPC",
+      "targetPricing": "1 pETH.base = 40000 WPC",
       "createdAt": "2025-10-11T09:23:17.162Z"
     },
     "pETH.arb_WPC_3000": {
@@ -119,7 +119,7 @@
       "priceRatio": 40000,
       "sqrtPriceX96": "15845632502852867518708790067200",
       "currentTick": "105971",
-      "targetPricing": "1 pETH.arb = 0.000025 WPC",
+      "targetPricing": "1 pETH.arb = 40000 WPC",
       "createdAt": "2025-10-12T17:24:43.064Z"
     },
     "USDT.arb_WPC_500": {
@@ -134,7 +134,7 @@
       "priceRatio": 10,
       "sqrtPriceX96": "250541448375047931186413801569606323",
       "currentTick": "299351",
-      "targetPricing": "1 USDT.arb = 0.1 WPC",
+      "targetPricing": "1 USDT.arb = 10 WPC",
       "createdAt": "2025-10-12T17:25:35.016Z"
     },
     "USDT.bsc_WPC_500": {
@@ -149,7 +149,7 @@
       "priceRatio": 10,
       "sqrtPriceX96": "250541448375047931186413801569606323",
       "currentTick": "299351",
-      "targetPricing": "1 USDT.bsc = 0.1 WPC",
+      "targetPricing": "1 USDT.bsc = 10 WPC",
       "createdAt": "2025-10-17T13:50:37.544Z"
     },
     "pBNB_WPC_500": {
@@ -164,7 +164,7 @@
       "priceRatio": 10638,
       "sqrtPriceX96": "8171646606470663447671344624169",
       "currentTick": "92726",
-      "targetPricing": "1 pBNB = 0.00009400263207369807 WPC",
+      "targetPricing": "1 pBNB = 10638 WPC",
       "createdAt": "2025-10-17T13:51:35.783Z"
     },
     "USDC.arb_WPC_500": {
@@ -179,7 +179,7 @@
       "priceRatio": 10,
       "sqrtPriceX96": "250541448375047931186413801569606323",
       "currentTick": "299351",
-      "targetPricing": "1 USDC.arb = 0.1 WPC",
+      "targetPricing": "1 USDC.arb = 10 WPC",
       "createdAt": "2025-10-28T08:15:19.696Z"
     },
     "USDC.base_WPC_500": {
@@ -194,7 +194,7 @@
       "priceRatio": 10,
       "sqrtPriceX96": "250541448375047931186413801569606323",
       "currentTick": "299351",
-      "targetPricing": "1 USDC.base = 0.1 WPC",
+      "targetPricing": "1 USDC.base = 10 WPC",
       "createdAt": "2025-10-28T08:15:43.686Z"
     }
   }
