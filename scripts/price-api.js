@@ -287,6 +287,65 @@ async function getAvailableTokens() {
     return tokens;
 }
 
+// Get prices for all pools
+async function getAllPoolPrices() {
+    const POOLS = getPools();
+    const TOKENS = await getTokens();
+    const prices = [];
+
+    for (const [poolKey, pool] of Object.entries(POOLS)) {
+        const token0Info = TOKENS[pool.token0];
+        const token1Info = TOKENS[pool.token1];
+
+        if (!token0Info || !token1Info) {
+            continue;
+        }
+
+        try {
+            // Get price for 1 unit of token0 -> token1
+            const result = await getPrice(token0Info.symbol, token1Info.symbol, 1);
+
+            if (result.success) {
+                prices.push({
+                    pool: pool.name,
+                    poolKey: poolKey,
+                    token0: token0Info.symbol,
+                    token1: token1Info.symbol,
+                    price: result.rate,
+                    priceDisplay: `1 ${token0Info.symbol} = ${result.rate.toFixed(6)} ${token1Info.symbol}`,
+                    poolAddress: pool.address,
+                    fee: pool.fee
+                });
+                console.log(`1 ${token0Info.symbol} = ${result.rate.toFixed(6)} ${token1Info.symbol}`);
+            } else {
+                prices.push({
+                    pool: pool.name,
+                    poolKey: poolKey,
+                    token0: token0Info.symbol,
+                    token1: token1Info.symbol,
+                    price: null,
+                    priceDisplay: `Error: ${result.error}`,
+                    poolAddress: pool.address,
+                    fee: pool.fee
+                });
+            }
+        } catch (error) {
+            prices.push({
+                pool: pool.name,
+                poolKey: poolKey,
+                token0: token0Info.symbol,
+                token1: token1Info.symbol,
+                price: null,
+                priceDisplay: `Error: ${error.message}`,
+                poolAddress: pool.address,
+                fee: pool.fee
+            });
+        }
+    }
+
+    return prices;
+}
+
 // Add new token manually (for future tokens not in pools yet)
 async function addToken(tokenAddress) {
     try {
@@ -320,6 +379,9 @@ if (require.main === module) {
         console.log('📋 List Pools:');
         console.log('  node scripts/price-api.js pools');
         console.log('');
+        console.log('💰 Get All Pool Prices:');
+        console.log('  node scripts/price-api.js all-prices');
+        console.log('');
         console.log('🪙 List Tokens:');
         console.log('  node scripts/price-api.js tokens');
         console.log('');
@@ -340,6 +402,23 @@ if (require.main === module) {
                 console.log(`│  Token0: ${pool.token0.name} (${pool.token0.decimals} decimals)`);
                 console.log(`│  Token1: ${pool.token1.name} (${pool.token1.decimals} decimals)`);
             });
+        });
+    } else if (command === 'all-prices') {
+        console.log('Fetching all pool prices...');
+        getAllPoolPrices().then(prices => {
+            console.log('💰 ALL POOL PRICES');
+            console.log('='.repeat(80));
+            prices.forEach(price => {
+                console.log(`\n${price.pool}`);
+                console.log(`  ${price.priceDisplay}`);
+                console.log(`  Pool: ${price.poolAddress}`);
+                console.log(`  Fee: ${price.fee} bps (${(price.fee / 10000).toFixed(2)}%)`);
+            });
+            console.log('\n' + '='.repeat(80));
+            console.log(`\n📊 Total: ${prices.length} pools`);
+        }).catch(error => {
+            console.error('❌ Error:', error.message);
+            process.exit(1);
         });
     } else if (command === 'tokens') {
         getAvailableTokens().then(tokens => {
@@ -382,5 +461,6 @@ module.exports = {
     getAvailablePools,
     getAvailableTokens,
     addToken,
-    discoverTokenInfo
+    discoverTokenInfo,
+    getAllPoolPrices
 };

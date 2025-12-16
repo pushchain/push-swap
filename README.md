@@ -126,6 +126,12 @@ node scripts/price-api.js price pETH WPC 1
 node scripts/price-api.js pools
 ```
 
+### Get All Pool Prices
+```bash
+# Get current prices for all pools at once
+node scripts/price-api.js all-prices
+```
+
 ### List Available Tokens
 ```bash
 # List all available tokens with their addresses and decimals
