@@ -655,6 +655,149 @@ async function performSwap(poolAddress, tokenInAddress, tokenOutAddress, amountI
     }
 }
 
+// Perform swap with native PC (no wrapping needed - router handles it automatically)
+async function performSwapWithNative(poolAddress, tokenOutAddress, amountIn) {
+    console.log('🔄 PERFORMING SWAP WITH NATIVE PC');
+    console.log('='.repeat(50));
+
+    try {
+        const signer = config.getSigner();
+        const swapRouter = config.getContract('swapRouter');
+        const WPCAddress = config.CONTRACTS.WPC;
+
+        // Get token contracts
+        const tokenOut = new ethers.Contract(tokenOutAddress, config.ABIS.prc20, signer);
+        const decimalsOut = await tokenOut.decimals();
+        const symbolOut = await tokenOut.symbol();
+
+        // Parse amount (native PC uses 18 decimals)
+        const amountInParsed = ethers.utils.parseUnits(amountIn, 18);
+
+        console.log('├─ Pool Address:', poolAddress);
+        console.log('├─ Token In: Native PC (will be wrapped to WPC automatically)');
+        console.log('├─ Token Out:', symbolOut, tokenOutAddress);
+        console.log('├─ Amount In:', amountIn, 'PC');
+
+        // Check balances before
+        const nativeBalanceBefore = await signer.getBalance();
+        const WPCContract = new ethers.Contract(WPCAddress, config.ABIS.prc20, signer);
+        const WPCBalanceBefore = await WPCContract.balanceOf(signer.address);
+        const balanceOutBefore = await tokenOut.balanceOf(signer.address);
+
+        console.log('├─ Native PC Balance Before:', ethers.utils.formatEther(nativeBalanceBefore), 'PC');
+        console.log('├─ WPC Balance Before:', ethers.utils.formatEther(WPCBalanceBefore), 'WPC');
+        console.log('├─ Balance Out Before:', ethers.utils.formatUnits(balanceOutBefore, decimalsOut), symbolOut);
+
+        // Check if we have enough native PC
+        if (nativeBalanceBefore.lt(amountInParsed)) {
+            throw new Error(`Insufficient native PC balance. Have ${ethers.utils.formatEther(nativeBalanceBefore)}, need ${amountIn}`);
+        }
+
+        // Get pool fee
+        const pool = new ethers.Contract(poolAddress, config.ABIS.pool, signer);
+        const fee = await pool.fee();
+
+        // Swap params - use WPC address as tokenIn, router will wrap native PC automatically
+        const swapParams = {
+            tokenIn: WPCAddress, // Router will wrap native PC to WPC automatically
+            tokenOut: tokenOutAddress,
+            fee: fee,
+            recipient: signer.address,
+            deadline: Math.floor(Date.now() / 1000) + 60 * 20,
+            amountIn: amountInParsed,
+            amountOutMinimum: 0, // Allow any output for testing
+            sqrtPriceLimitX96: 0
+        };
+
+        console.log('├─ Swap params:', JSON.stringify({
+            ...swapParams,
+            amountIn: swapParams.amountIn.toString(),
+            deadline: new Date(swapParams.deadline * 1000).toISOString()
+        }, null, 2));
+
+        console.log('├─ Executing swap with native PC (router will wrap automatically)...');
+        let receipt;
+        try {
+            // Send native PC as value - router's pay() function will wrap it when tokenIn == WPC
+            // The router checks: if (token == WETH9 && address(this).balance >= value)
+            // So we send the native PC with the transaction, and router wraps it during callback
+            const swapTx = await swapRouter.exactInputSingle(swapParams, { value: amountInParsed });
+            console.log('├─ Transaction sent:', swapTx.hash);
+            receipt = await swapTx.wait();
+            console.log('├─ Transaction confirmed, gas used:', receipt.gasUsed.toString());
+
+            // Check for swap events
+            if (receipt.logs && receipt.logs.length > 0) {
+                console.log('├─ Transaction had', receipt.logs.length, 'events');
+            } else {
+                console.log('├─ ⚠️  Transaction had NO EVENTS - this might be the issue!');
+            }
+        } catch (swapError) {
+            console.log('├─ ❌ Swap transaction failed:', swapError.message);
+            throw swapError;
+        }
+
+        // Check new balances
+        const nativeBalanceAfter = await signer.getBalance();
+        const WPCBalanceAfter = await WPCContract.balanceOf(signer.address);
+        const balanceOutAfter = await tokenOut.balanceOf(signer.address);
+
+        // Calculate actual amount used (native balance decrease includes gas fees)
+        // We sent amountInParsed as value, so that's what was actually swapped
+        const amountInActual = amountInParsed;
+        const amountOutActual = balanceOutAfter.sub(balanceOutBefore);
+
+        // Calculate total native PC decrease (includes swap amount + gas)
+        const totalNativeDecrease = nativeBalanceBefore.sub(nativeBalanceAfter);
+        const gasCost = totalNativeDecrease.sub(amountInParsed);
+
+        console.log('📊 Swap Results:');
+        console.log('├─ Native PC Swapped:', ethers.utils.formatEther(amountInActual), 'PC');
+        if (gasCost.gt(0)) {
+            console.log('├─ Gas Cost:', ethers.utils.formatEther(gasCost), 'PC');
+        }
+        console.log('├─ Amount Out:', ethers.utils.formatUnits(amountOutActual, decimalsOut), symbolOut);
+        console.log('├─ Amount Out (raw wei):', amountOutActual.toString());
+
+        // Calculate exchange rate
+        if (amountInActual.gt(0)) {
+            const rate = amountOutActual.mul(ethers.utils.parseUnits('1', 18)).div(amountInActual);
+            console.log('├─ Exchange Rate:', `1 PC = ${ethers.utils.formatUnits(rate, decimalsOut)} ${symbolOut}`);
+        } else {
+            console.log('├─ Exchange Rate: N/A (no input amount)');
+        }
+
+        // Status check
+        if (amountOutActual.gt(0)) {
+            console.log('├─ ✅ SWAP SUCCESS: Received', amountOutActual.toString(), 'wei of', symbolOut);
+        } else {
+            console.log('├─ ❌ NO OUTPUT: Zero tokens received');
+        }
+        console.log('└─ Transaction Hash:', receipt.transactionHash);
+
+        console.log('💰 New Balances:');
+        console.log('├─ Native PC:', ethers.utils.formatEther(nativeBalanceAfter), 'PC');
+        console.log('├─ WPC Balance After:', ethers.utils.formatEther(WPCBalanceAfter), 'WPC');
+        console.log('└─ Token Out:', ethers.utils.formatUnits(balanceOutAfter, decimalsOut), symbolOut);
+
+        // Verify WPC wasn't used
+        const WPCChange = WPCBalanceAfter.sub(WPCBalanceBefore);
+        if (WPCChange.eq(0)) {
+            console.log('✅ VERIFICATION: WPC balance unchanged - native PC was used directly!');
+        } else {
+            console.log('⚠️  WARNING: WPC balance changed by', ethers.utils.formatEther(WPCChange.abs()), 'WPC');
+        }
+
+        console.log('🎉 Swap with native PC completed successfully!');
+
+        return receipt.transactionHash;
+
+    } catch (error) {
+        console.error('❌ Swap with native PC failed:', error.message);
+        throw error;
+    }
+}
+
 // Route swap (multi-hop) - Example: USDC.arb -> WPC -> USDC.base
 async function routeSwap(tokenInAddress, tokenOutAddress, amountIn, routeTokens, routeFees) {
     console.log('🔀 PERFORMING ROUTE SWAP');
@@ -934,6 +1077,12 @@ async function main() {
                 await performSwap(poolAddress, tokenInAddr, tokenOutAddr, amountIn);
                 break;
 
+            case 'swap-with-native':
+                // node pool-manager.js swap-with-native <poolAddress> <tokenOutAddress> <amountIn>
+                const [poolAddrNative, tokenOutAddrNative, amountInNative] = args.slice(1);
+                await performSwapWithNative(poolAddrNative, tokenOutAddrNative, amountInNative);
+                break;
+
             case 'route-swap':
                 // node pool-manager.js route-swap <tokenIn> <tokenOut> <amount> <intermediateToken1> [intermediateToken2...] --fees <fee1> <fee2> [fee3...]
                 // Example: node pool-manager.js route-swap USDC.arb USDC.base 10 WPC --fees 500 500
@@ -998,6 +1147,7 @@ async function main() {
                 console.log('  create-pool <token0Address> <token1Address> <priceRatio> [fee] [addLiquidity] [amount0] [amount1]');
                 console.log('  add-liquidity <poolAddress> <token0Address> <token1Address> <amount0> <amount1>');
                 console.log('  swap <poolAddress> <tokenInAddress> <tokenOutAddress> <amountIn>');
+                console.log('  swap-with-native <poolAddress> <tokenOutAddress> <amountIn> - Swap native PC directly (no wrapping/approval needed)');
                 console.log('  get-WPC [amount] - Get WPC tokens by depositing PUSH');
         }
     } catch (error) {
@@ -1015,5 +1165,6 @@ module.exports = {
     createPool,
     addLiquidityToPool,
     performSwap,
+    performSwapWithNative,
     calculateSqrtPriceX96Precise
 }; 

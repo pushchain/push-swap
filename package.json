@@ -5,6 +5,7 @@
     "scripts": {
         "deploy-dex": "npx hardhat run scripts/deploy-all.js --network push_testnet",
         "pool-manager": "node scripts/pool-manager.js",
+        "pool-health": "node scripts/pool-health.js",
         "deploy-WPC": "npx hardhat run scripts/deploy-WPC.js --network push_testnet",
         "deploy-core": "cd v3-core && npm install && npx hardhat compile && npx hardhat run scripts/deploy-core.js --network pushchain",
         "deploy-periphery": "cd v3-periphery && npm install && npx hardhat compile && npx hardhat run scripts/deploy-periphery.js --network pushchain",

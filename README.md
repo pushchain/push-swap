@@ -75,9 +75,7 @@ node scripts/pool-manager.js add-liquidity [pool_addr] [pETH_addr] [WPC_addr] 1 
 ```
 
 **Perform Swap:**
-```bash
-node scripts/pool-manager.js swap [pool_addr] [pETH_addr] [WPC_addr] 1
-```
+See [pool-manager.js Commands](#pool-managerjs-commands) section below for all swap options.
 
 ## Available Scripts
 
@@ -103,6 +101,10 @@ node scripts/pool-manager.js add-liquidity [poolAddr] [token0] [token1] [amount0
 
 # Token Swaps
 node scripts/pool-manager.js swap [poolAddr] [tokenIn] [tokenOut] [amountIn]
+node scripts/pool-manager.js swap-with-native [poolAddr] [tokenOut] [amountIn]
+
+# Multi-hop Route Swaps (PRC20 → PRC20 via intermediate tokens)
+node scripts/pool-manager.js route-swap [tokenIn] [tokenOut] [amount] [intermediateToken1] [intermediateToken2...] --fees [fee1] [fee2] [fee3...]
 ```
 
 ## price-api.js Commands
@@ -208,9 +210,39 @@ node scripts/pool-manager.js deploy-tokens USDT "Tether" 6 1000000 DAI "Dai" 18 
 node scripts/pool-manager.js create-pool [USDT] [DAI] 1 500 true 1000 1000
 ```
 
-### Cross-Pool Trading
+### Cross-Pool Trading (PRC20 → PRC20)
+
+For swapping between PRC20 tokens (e.g., pETH → pSOL), use `route-swap` which executes the entire route in a single transaction:
+
 ```bash
-# Execute trades across multiple pools
-node scripts/pool-manager.js swap [pool1] [tokenA] [tokenB] 100
-node scripts/pool-manager.js swap [pool2] [tokenB] [tokenC] [amount_received]
-``` 
+# Swap pETH to pSOL via WPC (single transaction)
+# Route: pETH → WPC → pSOL
+node scripts/pool-manager.js route-swap pETH pSOL 1 WPC --fees 500 500
+
+# Swap USDC.arb to USDC.base via WPC
+node scripts/pool-manager.js route-swap USDC.arb USDC.base 100 WPC --fees 500 500
+
+# Multi-hop route with multiple intermediate tokens
+node scripts/pool-manager.js route-swap tokenA tokenD 100 tokenB tokenC --fees 500 3000 500
+```
+
+**Note:** All tokens must be in `official-prc20.json`. The number of fees must be one less than the total number of tokens in the route.
+
+## Pool Health Monitoring
+
+Check and maintain pool health:
+
+```bash
+# Check all pool health
+npm run pool-health check
+
+# Heal a specific pool
+npm run pool-health heal [poolAddress] [amount0] [amount1]
+
+# Auto-heal all unhealthy pools
+npm run pool-health auto-heal
+```
+
+**Health Checks:**
+- ✅ **Liquidity**: Ensures minimum liquidity threshold
+- ✅ **Tick Position**: Alerts if pool is near extreme prices (>90% of MAX/MIN tick)
